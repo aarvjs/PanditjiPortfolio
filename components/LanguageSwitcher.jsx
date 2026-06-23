@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useLanguage, translations } from "../context/LanguageContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ChevronDown, Globe } from "lucide-react";
 
 export default function LanguageSwitcher() {
@@ -21,13 +21,18 @@ export default function LanguageSwitcher() {
   }, []);
 
   const languageOptions = [
-    { code: "hi", name: "हिन्दी" },
     { code: "en", name: "English" },
-    { code: "bho", name: "भोजपुरी" },
-    { code: "sa", name: "संस्कृतम्" }
+    { code: "hi", name: "हिन्दी" },
+    { code: "sa", name: "संस्कृतम्" },
+    { code: "or", name: "ଓଡ଼ିଆ" },
+    { code: "bn", name: "বাংলা" },
+    { code: "mr", name: "मराठी" },
+    { code: "gu", name: "ગુજરાતી" },
+    { code: "te", name: "తెలుగు" },
+    { code: "ta", name: "தமிழ்" }
   ];
 
-  const currentLangName = languageOptions.find((o) => o.code === language)?.name || "हिन्दी";
+  const currentLangName = languageOptions.find((o) => o.code === language)?.name || "English";
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -48,7 +53,7 @@ export default function LanguageSwitcher() {
 
       {isOpen && (
         <div
-          className="absolute right-0 z-50 mt-1.5 w-32 origin-top-right rounded-xl bg-white border border-gold/25 shadow-lg ring-1 ring-black/5 focus:outline-none py-1 animate-fade-in"
+          className="absolute right-0 z-50 mt-1.5 w-32 origin-top-right rounded-xl bg-white border border-gold/25 shadow-lg ring-1 ring-black/5 focus:outline-none py-1 animate-fade-in max-h-60 overflow-y-auto"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="menu-button"

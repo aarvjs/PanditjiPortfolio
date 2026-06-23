@@ -5,9 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Sparkles, Calendar, Heart, HeartHandshake } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 export default function HomeHero() {
   const { t } = useLanguage();
+  const { settings } = useSiteSettings();
 
   return (
     <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center bg-gradient-to-b from-cream via-[#FFFDF9] to-cream-dark/20 overflow-hidden pt-28 pb-16 border-b border-gold/15">
@@ -29,12 +31,12 @@ export default function HomeHero() {
             {/* Saffron Welcome Badge */}
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-saffron/10 border border-saffron/20 rounded-full text-[10px] sm:text-xs font-bold font-serif uppercase tracking-widest text-saffron">
               <Sparkles className="w-3.5 h-3.5 text-saffron animate-pulse" />
-              <span>{t("divine_guidance")}</span>
+              <span>{settings.tagline || t("divine_guidance")}</span>
             </div>
  
             {/* Main Spiritual Heading */}
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-serif text-maroon text-saffron-glow leading-[1.15] tracking-wide max-w-2xl">
-              {t("hero_title")}
+              {settings.organizationName || t("hero_title")}
             </h1>
 
             {/* Guru Ji Name & Designation in Portfolio Style */}

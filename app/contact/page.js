@@ -1,9 +1,8 @@
-import React from "react";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import PageHero from "../../components/PageHero";
-import SectionHeading from "../../components/SectionHeading";
 import ContactForm from "../../components/ContactForm";
+import { getSiteSettings } from "../../lib/db";
 import { MapPin, Phone, Mail, MessageCircle, Clock, ExternalLink } from "lucide-react";
 
 export const metadata = {
@@ -11,23 +10,17 @@ export const metadata = {
   description: "Get in touch with Neelmani Kripalu Satsang. Find addresses of our Delhi and Vrindavan ashrams, phone helplines, WhatsApp links, and submit queries."
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
   const breadcrumbs = [{ name: "Contact Us", path: "" }];
+  const settings = await getSiteSettings();
 
   const locations = [
     {
-      title: "Delhi Dwarka Center",
-      address: "Kripalu Dham, Sector 15, Dwarka, New Delhi - 110075",
-      phone: "+91 98765 43210",
-      email: "delhi@neelmanikripalusatsang.org",
+      title: settings.organizationName || "Neelmani Kripalu Satsang Center",
+      address: settings.address || "Kripalu Dham, Sector 15, Dwarka, New Delhi & Vrindavan Ashram, UP",
+      phone: settings.phone || "+91 98765 43210",
+      email: settings.email || "contact@neelmanikripalusatsang.org",
       hours: "Daily: 08:00 AM - 12:00 PM & 04:00 PM - 08:00 PM"
-    },
-    {
-      title: "Vrindavan Seva Ashram",
-      address: "Neelmani Kripalu Ashram, Raman Reti, Vrindavan, Mathura, UP - 281121",
-      phone: "+91 98765 43211",
-      email: "vrindavan@neelmanikripalusatsang.org",
-      hours: "Daily: 06:00 AM - 01:00 PM & 04:30 PM - 09:00 PM"
     }
   ];
 
@@ -72,7 +65,7 @@ export default function ContactPage() {
                   Need quick information about weekly satsang venues or seva addresses? Direct message our helpdesk on WhatsApp.
                 </p>
                 <a
-                  href="https://wa.me/919876543210?text=Radhey%20Radhey!%20I%20want%20to%20know%20about%20upcoming%20satsang%20gatherings."
+                  href={`https://wa.me/${settings.whatsapp || "919876543210"}?text=Radhey%20Radhey!%20I%20want%20to%20know%20about%20upcoming%20satsang%20gatherings.`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wider text-xs rounded-full transition-all shadow-sm font-sans"

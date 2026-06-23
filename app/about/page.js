@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -126,8 +126,68 @@ const aboutData = {
   ]
 };
 
+import { getAboutContent } from "../../lib/db";
+
 export default function AboutPage() {
   const breadcrumbs = [{ name: "About Us", path: "" }];
+  const [dynamicAbout, setDynamicAbout] = useState(null);
+
+  useEffect(() => {
+    const fetchAbout = async () => {
+      try {
+        const data = await getAboutContent();
+        if (data && Object.keys(data).length > 0) {
+          setDynamicAbout(data);
+        }
+      } catch (err) {
+        console.error("Error fetching about content:", err);
+      }
+    };
+    fetchAbout();
+  }, []);
+
+  const activeAbout = {
+    hero: {
+      badge: dynamicAbout?.heroSubtitle || aboutData.hero.badge,
+      heading: dynamicAbout?.heroTitle || aboutData.hero.heading,
+      paragraph: dynamicAbout?.guruJiIntro || aboutData.hero.paragraph,
+      imagePath: dynamicAbout?.guruJiImageUrl || aboutData.hero.imagePath
+    },
+    satsangDetails: aboutData.satsangDetails,
+    guruIntro: {
+      title: aboutData.guruIntro.title,
+      subtitle: aboutData.guruIntro.subtitle,
+      text1: dynamicAbout?.guruJiIntro ? `${dynamicAbout.guruJiName || "Jagadguru Shri Kripalu Ji Maharaj"}: ${dynamicAbout.guruJiIntro.slice(0, 200)}...` : aboutData.guruIntro.text1,
+      text2: dynamicAbout?.philosophy || aboutData.guruIntro.text2
+    },
+    qualifications: [
+      {
+        ...aboutData.qualifications[0],
+        desc: dynamicAbout?.qualifications || aboutData.qualifications[0].desc
+      },
+      aboutData.qualifications[1],
+      aboutData.qualifications[2],
+      aboutData.qualifications[3]
+    ],
+    missionVision: {
+      mission: {
+        title: aboutData.missionVision.mission.title,
+        desc: dynamicAbout?.mission || aboutData.missionVision.mission.desc
+      },
+      vision: {
+        title: aboutData.missionVision.vision.title,
+        desc: dynamicAbout?.vision || aboutData.missionVision.vision.desc
+      }
+    },
+    philosophy: {
+      title: aboutData.philosophy.title,
+      subtitle: aboutData.philosophy.subtitle,
+      summary: dynamicAbout?.philosophy || aboutData.philosophy.summary,
+      points: aboutData.philosophy.points
+    },
+    sevaActivities: aboutData.sevaActivities,
+    committee: aboutData.committee
+  };
 
   return (
     <>
@@ -163,7 +223,7 @@ export default function AboutPage() {
                 <div className="relative z-10 p-2">
                   <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-4 border-gold shadow-md relative overflow-hidden bg-gold-light/10">
                     <img
-                      src={aboutData.hero.imagePath}
+                      src={activeAbout.hero.imagePath}
                       alt="Guru Ji - Jagadguru Shri Kripalu Ji Maharaj"
                       className="w-full h-full object-cover object-top hover:scale-[1.03] transition-transform duration-700"
                     />
@@ -199,17 +259,17 @@ export default function AboutPage() {
                 {/* Badge */}
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-maroon/5 border border-maroon/15 rounded-full text-[10px] font-bold font-serif uppercase tracking-widest text-maroon shadow-sm">
                   <Sparkles className="w-3 h-3 text-gold" />
-                  <span>{aboutData.hero.badge}</span>
+                  <span>{activeAbout.hero.badge}</span>
                 </div>
 
                 {/* Heading */}
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-black font-serif text-maroon leading-tight tracking-wide">
-                  {aboutData.hero.heading}
+                  {activeAbout.hero.heading}
                 </h1>
 
                 {/* Paragraph */}
                 <p className="text-xs sm:text-sm text-dark-brown/85 leading-relaxed font-sans max-w-xl">
-                  {aboutData.hero.paragraph}
+                  {activeAbout.hero.paragraph}
                 </p>
 
                 {/* Action Buttons */}
@@ -243,18 +303,18 @@ export default function AboutPage() {
         <section className="py-16 bg-[#FCFAF6]">
           <div className="max-w-5xl mx-auto px-6 sm:px-8 text-center space-y-6">
             <SectionHeading 
-              title={aboutData.satsangDetails.title} 
-              subtitle={aboutData.satsangDetails.subtitle} 
+              title={activeAbout.satsangDetails.title} 
+              subtitle={activeAbout.satsangDetails.subtitle} 
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mt-6">
               <div className="bg-white/70 border border-gold/15 p-6 rounded-2xl shadow-sm hover:border-gold/30 transition-colors duration-300">
                 <p className="text-xs sm:text-sm text-dark-brown/90 leading-relaxed font-sans">
-                  {aboutData.satsangDetails.description1}
+                  {activeAbout.satsangDetails.description1}
                 </p>
               </div>
               <div className="bg-white/70 border border-gold/15 p-6 rounded-2xl shadow-sm hover:border-gold/30 transition-colors duration-300">
                 <p className="text-xs sm:text-sm text-dark-brown/90 leading-relaxed font-sans">
-                  {aboutData.satsangDetails.description2}
+                  {activeAbout.satsangDetails.description2}
                 </p>
               </div>
             </div>
@@ -270,16 +330,16 @@ export default function AboutPage() {
               {/* Left Side: Qualifications/Intro Content */}
               <div className="lg:col-span-6 space-y-6 text-left self-stretch flex flex-col justify-center">
                 <SectionHeading 
-                  title={aboutData.guruIntro.title} 
-                  subtitle={aboutData.guruIntro.subtitle} 
+                  title={activeAbout.guruIntro.title} 
+                  subtitle={activeAbout.guruIntro.subtitle} 
                   centered={false} 
                 />
                 
                 <p className="text-xs sm:text-sm text-dark-brown/90 leading-relaxed font-sans pt-1">
-                  {aboutData.guruIntro.text1}
+                  {activeAbout.guruIntro.text1}
                 </p>
                 <p className="text-xs sm:text-sm text-dark-brown/90 leading-relaxed font-sans">
-                  {aboutData.guruIntro.text2}
+                  {activeAbout.guruIntro.text2}
                 </p>
               </div>
 
@@ -290,7 +350,7 @@ export default function AboutPage() {
                 {/* Tall Photo Container - matches the vertical span of the left column */}
                 <div className="relative w-72 sm:w-80 h-[430px] sm:h-[480px] rounded-3xl border-2 border-gold/30 shadow-md overflow-hidden bg-gold-light/10 p-2">
                   <img
-                    src="/images/WhatsApp Image 2026-06-18 at 11.40.20.jpeg"
+                    src={activeAbout.hero.imagePath}
                     alt="Jagadguru Shri Kripalu Ji Maharaj"
                     className="w-full h-full object-cover object-top rounded-2xl"
                     onError={(e) => {
@@ -305,53 +365,53 @@ export default function AboutPage() {
                 <div className="hidden md:block absolute inset-0 pointer-events-none">
                   
                   {/* Card 1: Top Left */}
-                  <div className={`absolute top-8 -left-8 md:-left-12 ${aboutData.qualifications[0].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
+                  <div className={`absolute top-8 -left-8 md:-left-12 ${activeAbout.qualifications[0].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
                     <div className="flex gap-2 items-start">
                       <div className="p-1 bg-maroon/5 rounded-lg flex-shrink-0 mt-0.5">
-                        {aboutData.qualifications[0].icon}
+                        {activeAbout.qualifications[0].icon}
                       </div>
                       <div>
-                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{aboutData.qualifications[0].title}</h5>
-                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{aboutData.qualifications[0].desc}</p>
+                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{activeAbout.qualifications[0].title}</h5>
+                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{activeAbout.qualifications[0].desc}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Card 2: Top Right */}
-                  <div className={`absolute top-24 -right-8 md:-right-12 ${aboutData.qualifications[1].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
+                  <div className={`absolute top-24 -right-8 md:-right-12 ${activeAbout.qualifications[1].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
                     <div className="flex gap-2 items-start">
                       <div className="p-1 bg-maroon/5 rounded-lg flex-shrink-0 mt-0.5">
-                        {aboutData.qualifications[1].icon}
+                        {activeAbout.qualifications[1].icon}
                       </div>
                       <div>
-                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{aboutData.qualifications[1].title}</h5>
-                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{aboutData.qualifications[1].desc}</p>
+                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{activeAbout.qualifications[1].title}</h5>
+                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{activeAbout.qualifications[1].desc}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Card 3: Bottom Left */}
-                  <div className={`absolute bottom-36 -left-8 md:-left-12 ${aboutData.qualifications[2].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
+                  <div className={`absolute bottom-36 -left-8 md:-left-12 ${activeAbout.qualifications[2].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
                     <div className="flex gap-2 items-start">
                       <div className="p-1 bg-maroon/5 rounded-lg flex-shrink-0 mt-0.5">
-                        {aboutData.qualifications[2].icon}
+                        {activeAbout.qualifications[2].icon}
                       </div>
                       <div>
-                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{aboutData.qualifications[2].title}</h5>
-                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{aboutData.qualifications[2].desc}</p>
+                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{activeAbout.qualifications[2].title}</h5>
+                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{activeAbout.qualifications[2].desc}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Card 4: Bottom Right */}
-                  <div className={`absolute bottom-16 -right-8 md:-right-12 ${aboutData.qualifications[3].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
+                  <div className={`absolute bottom-16 -right-8 md:-right-12 ${activeAbout.qualifications[3].bgClass} backdrop-blur-sm border p-2.5 rounded-2xl shadow-sm max-w-[145px] pointer-events-auto transition-transform hover:scale-105 duration-300`}>
                     <div className="flex gap-2 items-start">
                       <div className="p-1 bg-maroon/5 rounded-lg flex-shrink-0 mt-0.5">
-                        {aboutData.qualifications[3].icon}
+                        {activeAbout.qualifications[3].icon}
                       </div>
                       <div>
-                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{aboutData.qualifications[3].title}</h5>
-                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{aboutData.qualifications[3].desc}</p>
+                        <h5 className="font-serif text-[10px] font-black text-maroon uppercase tracking-wider">{activeAbout.qualifications[3].title}</h5>
+                        <p className="text-[8px] text-dark-brown/70 leading-normal mt-0.5">{activeAbout.qualifications[3].desc}</p>
                       </div>
                     </div>
                   </div>
@@ -360,7 +420,7 @@ export default function AboutPage() {
 
                 {/* Mobile / Tablet Flow Grid: Stacks cleanly below the image to prevent overflow clipping */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 w-full md:hidden">
-                  {aboutData.qualifications.map((q) => (
+                  {activeAbout.qualifications.map((q) => (
                     <div 
                       key={q.id}
                       className={`${q.bgClass} border p-3 rounded-2xl shadow-sm`}
@@ -412,10 +472,10 @@ export default function AboutPage() {
                     <Compass className="w-5 h-5 text-maroon group-hover:text-white" />
                   </div>
                   <h3 className="font-serif text-base sm:text-lg font-bold text-maroon uppercase tracking-wider">
-                    {aboutData.missionVision.mission.title}
+                    {activeAbout.missionVision.mission.title}
                   </h3>
                   <p className="text-xs sm:text-sm text-dark-brown/85 leading-relaxed font-sans">
-                    {aboutData.missionVision.mission.desc}
+                    {activeAbout.missionVision.mission.desc}
                   </p>
                 </div>
                 <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-gold/45" />
@@ -428,10 +488,10 @@ export default function AboutPage() {
                     <Eye className="w-5 h-5 text-maroon group-hover:text-white" />
                   </div>
                   <h3 className="font-serif text-base sm:text-lg font-bold text-maroon uppercase tracking-wider">
-                    {aboutData.missionVision.vision.title}
+                    {activeAbout.missionVision.vision.title}
                   </h3>
                   <p className="text-xs sm:text-sm text-dark-brown/85 leading-relaxed font-sans">
-                    {aboutData.missionVision.vision.desc}
+                    {activeAbout.missionVision.vision.desc}
                   </p>
                 </div>
                 <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-gold/45" />
@@ -445,16 +505,16 @@ export default function AboutPage() {
         <section className="py-16 bg-[#FAF2DF]/25 border-t border-b border-gold/15 relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 text-center space-y-4">
             <SectionHeading 
-              title={aboutData.philosophy.title} 
-              subtitle={aboutData.philosophy.subtitle} 
+              title={activeAbout.philosophy.title} 
+              subtitle={activeAbout.philosophy.subtitle} 
             />
             
             <p className="text-xs sm:text-sm text-dark-brown/75 leading-relaxed font-sans max-w-xl mx-auto mb-8">
-              {aboutData.philosophy.summary}
+              {activeAbout.philosophy.summary}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {aboutData.philosophy.points.map((pt, idx) => (
+              {activeAbout.philosophy.points.map((pt, idx) => (
                 <div 
                   key={idx}
                   className="bg-white/70 border border-gold/15 p-6 rounded-2xl shadow-sm text-center hover:border-maroon/25 transition-colors duration-300"
@@ -489,7 +549,7 @@ export default function AboutPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {aboutData.sevaActivities.map((act, idx) => (
+              {activeAbout.sevaActivities.map((act, idx) => (
                 <div 
                   key={idx}
                   className="bg-white/80 border border-gold/15 p-5 rounded-2xl relative shadow-sm hover:shadow-md hover:border-gold/35 transition-all duration-300 flex flex-col justify-between h-full"
@@ -520,7 +580,7 @@ export default function AboutPage() {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {aboutData.committee.map((member, idx) => (
+              {activeAbout.committee.map((member, idx) => (
                 <div 
                   key={idx}
                   className="bg-white/80 border border-gold/15 p-5 rounded-2xl text-center shadow-sm hover:border-maroon/20 transition-colors duration-300"

@@ -1,5 +1,6 @@
 import { Cinzel, Lora } from "next/font/google";
 import { LanguageProvider } from "../context/LanguageContext";
+import { SiteSettingsProvider } from "../context/SiteSettingsContext";
 import FloatingActions from "../components/FloatingActions";
 import "./globals.css";
 
@@ -29,8 +30,10 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col bg-cream text-dark-brown">
         <LanguageProvider>
-          {children}
-          <FloatingActions />
+          <SiteSettingsProvider>
+            {children}
+            <FloatingActions />
+          </SiteSettingsProvider>
         </LanguageProvider>
       </body>
     </html>

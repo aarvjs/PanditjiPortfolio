@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isFirebaseConfigured, auth } from "../../../lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { LogIn, KeyRound, Mail, Sparkles, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -15,17 +15,11 @@ export default function AdminLoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if already logged in (Mock mode or Firebase)
-    const isMockAuth = localStorage.getItem("nks_admin_auth") === "true";
-    if (isMockAuth) {
-      router.push("/admin");
-      return;
-    }
-
+    // Check if already logged in Firebase
     if (isFirebaseConfigured && auth) {
       const unsubscribe = auth.onAuthStateChanged((user) => {
         if (user) {
-          router.push("/admin");
+          router.push("/admin/dashboard");
         }
       });
       return () => unsubscribe();
@@ -45,20 +39,19 @@ export default function AdminLoginPage() {
     try {
       if (isFirebaseConfigured && auth) {
         // Live Firebase Auth
-        await signInWithEmailAndPassword(auth, email, password);
-        router.push("/admin");
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // Successfully authorized
+        router.push("/admin/dashboard");
       } else {
-        // Mock Admin credentials fallback
-        if (email.toLowerCase() === "admin@satsang.org" && password === "admin123") {
-          localStorage.setItem("nks_admin_auth", "true");
-          router.push("/admin");
-        } else {
-          setErrorMsg("Invalid credentials. Try admin@satsang.org / admin123 in Mock Mode.");
-        }
+        setErrorMsg("Firebase is not configured.");
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || "Failed to sign in. Please verify credentials.");
+      let msg = "Failed to sign in. Please verify credentials.";
+      if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        msg = "Invalid email or password. Please try again.";
+      }
+      setErrorMsg(err.message || msg);
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +59,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-mandala-pattern flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cream">
-      
+
       {/* Back to Home link */}
       <div className="absolute top-4 left-4">
         <Link
@@ -92,19 +85,8 @@ export default function AdminLoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white/70 border border-gold/20 py-8 px-6 shadow-lg rounded-3xl backdrop-blur-md">
-          
-          {/* Fallback Warning Alert */}
-          {!isFirebaseConfigured && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium space-y-1.5">
-              <span className="font-bold flex items-center gap-1">
-                <AlertCircle className="w-4 h-4 text-saffron" />
-                Running in Mock Admin Mode
-              </span>
-              <p className="leading-relaxed">
-                Use email <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold">admin@satsang.org</code> and password <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold">admin123</code> to log in and test.
-              </p>
-            </div>
-          )}
+
+          {/* Removed fallback warning as Mock Mode is disabled */}
 
           {errorMsg && (
             <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2">
@@ -161,6 +143,15 @@ export default function AdminLoginPage() {
               <span>{isLoading ? "Signing In..." : "Authenticate"}</span>
               <LogIn className="w-4 h-4" />
             </button>
+
+            <div className="text-center pt-2">
+              <Link
+                href="/admin/setup"
+                className="text-[11px] font-bold text-maroon hover:text-saffron transition-all font-serif uppercase tracking-wider border-b border-transparent hover:border-saffron pb-0.5"
+              >
+                First Time? Initialize SuperAdmin
+              </Link>
+            </div>
           </form>
 
         </div>

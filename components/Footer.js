@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Mail, Phone, MapPin, ChevronDown, ChevronUp, Flame, Send } from "lucide-react";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 
 export default function Footer() {
   const [openFaq, setOpenFaq] = useState(null);
+  const { settings } = useSiteSettings();
 
   const faqs = [
     {
@@ -37,11 +39,15 @@ export default function Footer() {
           {/* Column 1: Info and Brand */}
           <div className="flex flex-col space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-saffron flex items-center justify-center text-white">
-                <Flame className="w-5 h-5 fill-current" />
-              </div>
-              <span className="font-serif text-lg font-bold text-maroon tracking-wide">
-                NEELMANI KRIPALU SATSANG
+              {settings.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain rounded-full" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-saffron flex items-center justify-center text-white">
+                  <Flame className="w-5 h-5 fill-current" />
+                </div>
+              )}
+              <span className="font-serif text-lg font-bold text-maroon tracking-wide uppercase">
+                {settings.organizationName || "NEELMANI KRIPALU SATSANG"}
               </span>
             </Link>
             <p className="text-sm text-dark-brown/75 leading-relaxed font-sans">
@@ -50,15 +56,19 @@ export default function Footer() {
             <div className="space-y-2 pt-2 text-sm text-dark-brown/85">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-saffron mt-1 flex-shrink-0" />
-                <span>Kripalu Dham, Sec-15, Dwarka, New Delhi & Vrindavan Ashram, UP</span>
+                <span>{settings.address || "Kripalu Dham, Sec-15, Dwarka, New Delhi & Vrindavan Ashram, UP"}</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-saffron flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <a href={`tel:${settings.phone || "+919876543210"}`} className="hover:text-saffron transition-colors">
+                  {settings.phone || "+91 98765 43210"}
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-saffron flex-shrink-0" />
-                <span>contact@neelmanikripalusatsang.org</span>
+                <a href={`mailto:${settings.email || "contact@neelmanikripalusatsang.org"}`} className="hover:text-saffron transition-colors truncate max-w-[200px] xl:max-w-none">
+                  {settings.email || "contact@neelmanikripalusatsang.org"}
+                </a>
               </div>
             </div>
           </div>
@@ -150,7 +160,7 @@ export default function Footer() {
             </form>
             <div className="pt-2">
               <p className="italic text-xs text-saffron/90 font-serif border-l-2 border-saffron pl-2 leading-relaxed">
-                \"Through selfless devotion and humble service, the mirror of the heart is cleansed.\"
+                "Through selfless devotion and humble service, the mirror of the heart is cleansed."
               </p>
             </div>
           </div>
@@ -158,7 +168,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gold/15 flex flex-col md:flex-row items-center justify-between text-xs text-dark-brown/65">
-          <p>© {new Date().getFullYear()} Neelmani Kripalu Satsang. All spiritual rights reserved.</p>
+          <p>© {new Date().getFullYear()} {settings.organizationName || "Neelmani Kripalu Satsang"}. All spiritual rights reserved.</p>
           <div className="flex space-x-4 mt-4 md:mt-0 font-serif">
             <Link href="/about" className="hover:text-saffron">Mission History</Link>
             <span>•</span>

@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Header from "./Header";
 import Footer from "./Footer";
 import PageHero from "./PageHero";
 import SectionHeading from "./SectionHeading";
+import { getDonationInfo } from "../lib/db";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 import { 
   Heart, 
   Building2, 
@@ -27,6 +29,8 @@ import {
 export default function DonationPage({ campaigns = [] }) {
   const [copiedField, setCopiedField] = useState("");
   const [qrError, setQrError] = useState(false);
+  const [donationInfo, setDonationInfo] = useState(null);
+  const { settings: siteSettings } = useSiteSettings();
 
   const bankDetails = {
     accountName: "Neelmani Kripalu Satsang Trust",
@@ -35,6 +39,29 @@ export default function DonationPage({ campaigns = [] }) {
     ifscCode: "SBIN0001256",
     upiId: "neelmanisatsang@sbi",
     branch: "Dwarka Sector 12, New Delhi"
+  };
+
+  useEffect(() => {
+    const fetchDonation = async () => {
+      try {
+        const info = await getDonationInfo();
+        if (info && Object.keys(info).length > 0) {
+          setDonationInfo(info);
+        }
+      } catch (err) {
+        console.error("Failed to load donation info:", err);
+      }
+    };
+    fetchDonation();
+  }, []);
+
+  const activeBankDetails = {
+    accountName: donationInfo?.accountName || bankDetails.accountName,
+    bankName: donationInfo?.bankName || bankDetails.bankName,
+    accountNumber: donationInfo?.accountNumber || bankDetails.accountNumber,
+    ifscCode: donationInfo?.ifscCode || bankDetails.ifscCode,
+    upiId: donationInfo?.upiId || bankDetails.upiId,
+    branch: bankDetails.branch
   };
 
   const copyToClipboard = (text, fieldName) => {
@@ -140,9 +167,9 @@ export default function DonationPage({ campaigns = [] }) {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-cream-dark/25 rounded-xl border border-gold/10 gap-2">
                     <span className="text-[10px] uppercase tracking-wider text-dark-brown/50 font-bold">Account Name</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-bold text-dark-brown font-serif">{bankDetails.accountName}</span>
+                      <span className="text-xs sm:text-sm font-bold text-dark-brown font-serif">{activeBankDetails.accountName}</span>
                       <button 
-                        onClick={() => copyToClipboard(bankDetails.accountName, "name")}
+                        onClick={() => copyToClipboard(activeBankDetails.accountName, "name")}
                         className="p-1 hover:bg-gold-light/40 rounded transition-colors text-maroon"
                         aria-label="Copy account name"
                       >
@@ -154,16 +181,16 @@ export default function DonationPage({ campaigns = [] }) {
                   {/* Bank Name */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-cream-dark/25 rounded-xl border border-gold/10 gap-2">
                     <span className="text-[10px] uppercase tracking-wider text-dark-brown/50 font-bold">Bank Name</span>
-                    <span className="text-xs sm:text-sm font-semibold text-dark-brown">{bankDetails.bankName}</span>
+                    <span className="text-xs sm:text-sm font-semibold text-dark-brown">{activeBankDetails.bankName}</span>
                   </div>
 
                   {/* Account Number */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-cream-dark/25 rounded-xl border border-gold/10 gap-2">
                     <span className="text-[10px] uppercase tracking-wider text-dark-brown/50 font-bold">Account Number</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-black text-maroon tracking-wider font-mono">{bankDetails.accountNumber}</span>
+                      <span className="text-xs sm:text-sm font-black text-maroon tracking-wider font-mono">{activeBankDetails.accountNumber}</span>
                       <button 
-                        onClick={() => copyToClipboard(bankDetails.accountNumber, "number")}
+                        onClick={() => copyToClipboard(activeBankDetails.accountNumber, "number")}
                         className="p-1 hover:bg-gold-light/40 rounded transition-colors text-maroon"
                         aria-label="Copy account number"
                       >
@@ -176,9 +203,9 @@ export default function DonationPage({ campaigns = [] }) {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-cream-dark/25 rounded-xl border border-gold/10 gap-2">
                     <span className="text-[10px] uppercase tracking-wider text-dark-brown/50 font-bold">IFSC Code</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-black text-maroon tracking-wider font-mono">{bankDetails.ifscCode}</span>
+                      <span className="text-xs sm:text-sm font-black text-maroon tracking-wider font-mono">{activeBankDetails.ifscCode}</span>
                       <button 
-                        onClick={() => copyToClipboard(bankDetails.ifscCode, "ifsc")}
+                        onClick={() => copyToClipboard(activeBankDetails.ifscCode, "ifsc")}
                         className="p-1 hover:bg-gold-light/40 rounded transition-colors text-maroon"
                         aria-label="Copy IFSC code"
                       >
@@ -191,9 +218,9 @@ export default function DonationPage({ campaigns = [] }) {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-cream-dark/25 rounded-xl border border-gold/10 gap-2">
                     <span className="text-[10px] uppercase tracking-wider text-dark-brown/50 font-bold">UPI ID</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-black text-emerald-700 tracking-wider font-mono">{bankDetails.upiId}</span>
+                      <span className="text-xs sm:text-sm font-black text-emerald-700 tracking-wider font-mono">{activeBankDetails.upiId}</span>
                       <button 
-                        onClick={() => copyToClipboard(bankDetails.upiId, "upi")}
+                        onClick={() => copyToClipboard(activeBankDetails.upiId, "upi")}
                         className="p-1 hover:bg-gold-light/40 rounded transition-colors text-maroon"
                         aria-label="Copy UPI ID"
                       >
@@ -233,7 +260,7 @@ export default function DonationPage({ campaigns = [] }) {
                 <div className="w-48 h-48 relative border-2 border-gold/30 rounded-2xl p-2 bg-white shadow-sm flex items-center justify-center overflow-hidden">
                   {!qrError ? (
                     <Image
-                      src="/images/qr.png"
+                      src={donationInfo?.qrImageUrl || "/images/qr.png"}
                       alt="UPI QR Code"
                       width={180}
                       height={180}
@@ -335,16 +362,16 @@ export default function DonationPage({ campaigns = [] }) {
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4 font-sans text-xs">
                 {/* Phone */}
                 <a
-                  href="tel:+919876543210"
+                  href={`tel:${siteSettings?.phone || "+919876543210"}`}
                   className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/15"
                 >
                   <Phone className="w-4 h-4 text-gold" />
-                  <span>Call: +91 98765 43210</span>
+                  <span>Call: {siteSettings?.phone || "+91 98765 43210"}</span>
                 </a>
 
                 {/* WhatsApp */}
                 <a
-                  href="https://wa.me/919876543210?text=Radhey%20Radhey!%20I%20have%20made%20a%20donation%20towards%20seva%20and%20wanted%20to%20confirm."
+                  href={`https://wa.me/${siteSettings?.whatsapp || "919876543210"}?text=Radhey%20Radhey!%20I%20have%20made%20a%20donation%20towards%20seva%20and%20wanted%20to%20confirm.`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full transition-all shadow-md"
@@ -355,11 +382,11 @@ export default function DonationPage({ campaigns = [] }) {
 
                 {/* Email */}
                 <a
-                  href="mailto:donation@neelmanikripalusatsang.org"
+                  href={`mailto:${siteSettings?.email || "donation@neelmanikripalusatsang.org"}`}
                   className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all border border-white/15"
                 >
                   <Mail className="w-4 h-4 text-gold" />
-                  <span>Email: donation@neelmanikripalusatsang.org</span>
+                  <span>Email: {siteSettings?.email || "donation@neelmanikripalusatsang.org"}</span>
                 </a>
               </div>
             </div>

@@ -15,7 +15,8 @@ import {
   getEvents, 
   getCampaigns, 
   getGalleryItems, 
-  getAnnouncements 
+  getAnnouncements,
+  getGuruJiVideos
 } from "../lib/db";
 import { Flame, HeartHandshake, Compass, Users, Sparkles, ArrowRight, ArrowUpRight } from "lucide-react";
 
@@ -26,12 +27,16 @@ export default async function HomePage() {
   const campaigns = await getCampaigns();
   const gallery = await getGalleryItems();
   const announcements = await getAnnouncements();
+  const videos = await getGuruJiVideos();
 
   // Get active campaigns (Slice to 3 instead of 2)
   const activeCampaigns = campaigns.filter(c => c.status === "active").slice(0, 3);
   
   // Get latest announcements
   const latestAnnouncements = announcements.slice(0, 3);
+
+  // Get published videos
+  const publishedVideos = videos.filter(v => v.status === "published" || !v.status);
 
   // Get latest quote
   const latestQuote = quotes[0] || {
@@ -82,9 +87,7 @@ export default async function HomePage() {
         {/* ================= 2. GURU JI PHOTO GALLERY SECTION ================= */}
         <GuruGallery />
 
-        {/* ================= 3. YOUTUBE VIDEO SECTION ================= */}
-        {/* Implements premium 4-video card grid layout with custom inline modal player */}
-        <VideoSection />
+        <VideoSection videos={publishedVideos} />
 
         {/* ================= 4. QUOTE SECTION ================= */}
         <QuoteSection quote={latestQuote} />

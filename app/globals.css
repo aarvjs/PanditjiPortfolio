@@ -26,7 +26,7 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Typography Headings */
@@ -335,5 +335,179 @@ h1, h2, h3, h4, h5, h6, .font-cinzel {
 .bg-saffron-gradient-strong {
   background: linear-gradient(135deg, rgba(255, 90, 0, 0.08) 0%, rgba(122, 28, 28, 0.06) 50%, rgba(212, 175, 55, 0.04) 100%);
 }
+
+/* Dashboard stats grid and cards */
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Compact stats cards */
+.dashboard-stats-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.dashboard-stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(45, 28, 24, 0.08);
+  border-color: rgba(255, 90, 0, 0.3);
+}
+
+.dashboard-stats-card .card-icon-container {
+  padding: 0.4rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dashboard-stats-card .card-icon-container svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.dashboard-stats-card .card-info {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.dashboard-stats-card .card-count-wrapper {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.dashboard-stats-card .card-count {
+  font-family: var(--font-serif);
+  font-weight: 900;
+  color: var(--color-maroon);
+  line-height: 1;
+  font-size: 1.25rem;
+}
+
+.dashboard-stats-card .card-manage {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-saffron);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dashboard-stats-card:hover .card-manage {
+  opacity: 1;
+}
+
+.dashboard-stats-card .card-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(45, 28, 24, 0.7);
+  letter-spacing: 0.025em;
+  margin-top: 0.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-stats-card .card-desc {
+  display: none;
+}
+
+/* Medium mobile and up: increase padding and text size slightly */
+@media (min-width: 480px) {
+  .dashboard-stats-grid {
+    gap: 1rem;
+  }
+  .dashboard-stats-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  .dashboard-stats-card .card-icon-container {
+    padding: 0.5rem;
+  }
+  .dashboard-stats-card .card-icon-container svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .dashboard-stats-card .card-count {
+    font-size: 1.5rem;
+  }
+  .dashboard-stats-card .card-title {
+    font-size: 0.75rem;
+  }
+  .dashboard-stats-card .card-desc {
+    display: block;
+    font-size: 9px;
+    color: rgba(45, 28, 24, 0.45);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0.125rem;
+  }
+}
+
+/* Tablets and up: increase padding and text sizes */
+@media (min-width: 768px) {
+  .dashboard-stats-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .dashboard-stats-card .card-icon-container {
+    padding: 0.625rem;
+  }
+  .dashboard-stats-card .card-icon-container svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .dashboard-stats-card .card-count {
+    font-size: 1.75rem;
+  }
+  .dashboard-stats-card .card-title {
+    font-size: 0.8rem;
+  }
+  .dashboard-stats-card .card-desc {
+    font-size: 10px;
+  }
+}
+
 
 
