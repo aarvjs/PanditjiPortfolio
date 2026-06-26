@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { 
   Calendar, MapPin, Clock, Plus, Trash2, Edit2, ArrowLeft, 
-  Upload, ShieldAlert, CheckCircle, Search, Video, Map 
+  Upload, Search, Video, Map, DollarSign, Phone
 } from "lucide-react";
 import * as db from "../../../lib/db";
 import { uploadImage, deleteImage } from "../../../lib/upload";
+import Toast from "../../../components/Toast";
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("list"); // 'list' | 'create' | 'edit'
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
@@ -26,7 +27,12 @@ export default function AdminEventsPage() {
     status: "active", // "active" | "past"
     bannerImageUrl: "",
     bannerImageStoragePath: "",
-    organizer: "Neelmani Kripalu Satsang Committee"
+    organizer: "Neelmani Kripalu Satsang Committee",
+    venue: "",
+    registrationLastDate: "",
+    contactNumbers: "",
+    contributionDetails: "",
+    publishStatus: "published" // "published" | "draft"
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -45,15 +51,14 @@ export default function AdminEventsPage() {
       setEvents(data);
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch events from Firestore.");
+      showToast("Failed to fetch events from Firestore.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleInputChange = (e) => {
@@ -75,8 +80,8 @@ export default function AdminEventsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.date || !form.time || !form.location) {
-      showFeedback("error", "Please fill in all required fields.");
+    if (!form.title || !form.date || !form.time || !form.location || !form.venue) {
+      showToast("Please fill in all required fields (including specific venue).", "error");
       return;
     }
 
@@ -89,36 +94,48 @@ export default function AdminEventsPage() {
 
       // Handle Image Upload
       if (imageFile) {
-        const uploadResult = await uploadImage(imageFile, "events");
-        bannerImageUrl = uploadResult.downloadUrl;
-        bannerImageStoragePath = uploadResult.storagePath;
-
-        // If editing and had old image, delete the old one
+        // If editing and had old image, delete the old one first
         if (view === "edit" && form.bannerImageStoragePath) {
           await deleteImage(form.bannerImageStoragePath);
         }
+        const uploadResult = await uploadImage(imageFile, "events");
+        bannerImageUrl = uploadResult.downloadUrl;
+        bannerImageStoragePath = uploadResult.storagePath;
       }
 
       const eventPayload = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        date: form.date,
+        time: form.time,
+        location: form.location,
+        mapLink: form.mapLink,
+        eventType: form.eventType,
+        status: form.status,
         bannerImageUrl,
         bannerImageStoragePath,
+        organizer: form.organizer,
+        venue: form.venue,
+        registrationLastDate: form.registrationLastDate,
+        contactNumbers: form.contactNumbers,
+        contributionDetails: form.contributionDetails,
+        publishStatus: form.publishStatus,
         isOnline: form.eventType === "online"
       };
 
       if (view === "create") {
         await db.addEvent(eventPayload);
-        showFeedback("success", "Event created successfully!");
+        showToast("Event created successfully!", "success");
       } else {
         await db.updateEvent(editingId, eventPayload);
-        showFeedback("success", "Event updated successfully!");
+        showToast("Event updated successfully!", "success");
       }
 
       resetForm();
       await fetchEvents();
     } catch (err) {
       console.error(err);
-      showFeedback("error", err.message || "Failed to save event.");
+      showToast(err.message || "Failed to save event.", "error");
     } finally {
       setIsLoading(false);
       setUploading(false);
@@ -138,7 +155,12 @@ export default function AdminEventsPage() {
       status: event.status || "active",
       bannerImageUrl: event.bannerImageUrl || event.bannerUrl || "",
       bannerImageStoragePath: event.bannerImageStoragePath || "",
-      organizer: event.organizer || "Neelmani Kripalu Satsang Committee"
+      organizer: event.organizer || "Neelmani Kripalu Satsang Committee",
+      venue: event.venue || "",
+      registrationLastDate: event.registrationLastDate || "",
+      contactNumbers: event.contactNumbers || "",
+      contributionDetails: event.contributionDetails || "",
+      publishStatus: event.publishStatus || "published"
     });
     setImagePreview(event.bannerImageUrl || event.bannerUrl || "");
     setImageFile(null);
@@ -149,17 +171,15 @@ export default function AdminEventsPage() {
     if (!confirm(`Are you sure you want to delete event "${event.title}"?`)) return;
     setIsLoading(true);
     try {
-      // 1. Delete image file from Storage
       if (event.bannerImageStoragePath) {
         await deleteImage(event.bannerImageStoragePath);
       }
-      // 2. Delete document from Firestore
       await db.deleteEvent(event.id);
-      showFeedback("success", "Event deleted successfully!");
+      showToast("Event deleted successfully!", "success");
       await fetchEvents();
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to delete event.");
+      showToast("Failed to delete event.", "error");
       setIsLoading(false);
     }
   };
@@ -176,7 +196,12 @@ export default function AdminEventsPage() {
       status: "active",
       bannerImageUrl: "",
       bannerImageStoragePath: "",
-      organizer: "Neelmani Kripalu Satsang Committee"
+      organizer: "Neelmani Kripalu Satsang Committee",
+      venue: "",
+      registrationLastDate: "",
+      contactNumbers: "",
+      contributionDetails: "",
+      publishStatus: "published"
     });
     setImageFile(null);
     setImagePreview("");
@@ -191,6 +216,12 @@ export default function AdminEventsPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       {/* Top action header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
@@ -208,7 +239,7 @@ export default function AdminEventsPage() {
         {view === "list" ? (
           <button
             onClick={() => setView("create")}
-            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5"
+            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Event</span>
@@ -216,24 +247,13 @@ export default function AdminEventsPage() {
         ) : (
           <button
             onClick={resetForm}
-            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5"
+            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to list</span>
           </button>
         )}
       </div>
-
-      {feedback.message && (
-        <div className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-          feedback.type === "error" 
-            ? "bg-rose-50 border-rose-200 text-rose-800" 
-            : "bg-emerald-50 border-emerald-200 text-emerald-800"
-        }`}>
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
 
       {isLoading && view === "list" ? (
         <div className="py-20 flex justify-center items-center">
@@ -271,6 +291,7 @@ export default function AdminEventsPage() {
                       <th className="p-4 font-serif">Location</th>
                       <th className="p-4 font-serif">Type</th>
                       <th className="p-4 font-serif">Status</th>
+                      <th className="p-4 font-serif">Publish</th>
                       <th className="p-4 font-serif text-right">Actions</th>
                     </tr>
                   </thead>
@@ -325,7 +346,7 @@ export default function AdminEventsPage() {
                           </span>
                         </td>
                         <td className="p-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
                             event.status === "active"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-rose-50 text-rose-700 border border-rose-200"
@@ -333,18 +354,27 @@ export default function AdminEventsPage() {
                             {event.status || "active"}
                           </span>
                         </td>
+                        <td className="p-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
+                            event.publishStatus === "draft"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}>
+                            {event.publishStatus || "published"}
+                          </span>
+                        </td>
                         <td className="p-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleEditClick(event)}
-                              className="p-1.5 hover:bg-gold-light/45 text-maroon rounded-lg transition-colors border border-transparent hover:border-gold/15"
+                              className="p-1.5 hover:bg-gold-light/45 text-maroon rounded-lg transition-colors border border-transparent hover:border-gold/15 cursor-pointer"
                               title="Edit event"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(event)}
-                              className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                              className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors border border-transparent hover:border-rose-200 cursor-pointer"
                               title="Delete event"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -361,7 +391,7 @@ export default function AdminEventsPage() {
         </>
       ) : (
         /* Form View */
-        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm">
+        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm font-sans">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
@@ -444,6 +474,38 @@ export default function AdminEventsPage() {
                   </div>
                 </div>
 
+                {/* Contact Numbers & Contribution Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-saffron" />
+                      <span>Contact Numbers</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="contactNumbers"
+                      value={form.contactNumbers}
+                      onChange={handleInputChange}
+                      placeholder="e.g. +91 98765 43210, +91 99999 88888"
+                      className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif flex items-center gap-1">
+                      <DollarSign className="w-3.5 h-3.5 text-saffron" />
+                      <span>Contribution Details</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="contributionDetails"
+                      value={form.contributionDetails}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Free Entry / Voluntary / Rs. 500"
+                      className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                    />
+                  </div>
+                </div>
+
               </div>
 
               {/* Right Form Column */}
@@ -481,6 +543,36 @@ export default function AdminEventsPage() {
                   </div>
                 </div>
 
+                {/* Publish Status & Registration Last Date */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif">
+                      Publish Status
+                    </label>
+                    <select
+                      name="publishStatus"
+                      value={form.publishStatus}
+                      onChange={handleInputChange}
+                      className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                    >
+                      <option value="published">Published (Show on Public Site)</option>
+                      <option value="draft">Draft (Hide)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif">
+                      Registration Last Date
+                    </label>
+                    <input
+                      type="date"
+                      name="registrationLastDate"
+                      value={form.registrationLastDate}
+                      onChange={handleInputChange}
+                      className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                    />
+                  </div>
+                </div>
+
                 {/* Location */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif">
@@ -492,7 +584,23 @@ export default function AdminEventsPage() {
                     required
                     value={form.location}
                     onChange={handleInputChange}
-                    placeholder="e.g. Vrindavan Ashram Hall"
+                    placeholder="e.g. Dwarka Sector 15, New Delhi"
+                    className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                  />
+                </div>
+
+                {/* Specific Venue */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5 font-serif">
+                    Specific Venue / Room <span className="text-saffron">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="venue"
+                    required
+                    value={form.venue}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Satsang Hall A, Ground Floor"
                     className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
                   />
                 </div>
@@ -556,21 +664,21 @@ export default function AdminEventsPage() {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3">
+            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3 font-sans">
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={isLoading}
-                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors"
+                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {uploading ? "Uploading Banner..." : isLoading ? "Saving Event..." : "Save Event Details"}
+                {uploading ? "Saving Event Banner..." : view === "edit" ? "Update Event" : "Create Event"}
               </button>
             </div>
           </form>

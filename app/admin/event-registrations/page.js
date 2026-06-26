@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserCheck, CheckCircle, ShieldAlert, RefreshCw, Search, Calendar, ChevronDown } from "lucide-react";
+import { UserCheck, RefreshCw, Search, Calendar, Trash2 } from "lucide-react";
 import * as db from "../../../lib/db";
+import Toast from "../../../components/Toast";
 
 export default function AdminEventRegistrationsPage() {
   const [registrations, setRegistrations] = useState([]);
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   const [searchQuery, setSearchQuery] = useState("");
   const [filterEvent, setFilterEvent] = useState("all");
 
@@ -27,15 +28,28 @@ export default function AdminEventRegistrationsPage() {
       setEvents(eventsData);
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch event bookings.");
+      showToast("Failed to fetch event bookings.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
+  const handleDeleteClick = async (reg) => {
+    if (!confirm(`Are you sure you want to delete the seat booking of "${reg.name}"?`)) return;
+    setIsLoading(true);
+    try {
+      await db.deleteEventRegistration(reg.id);
+      showToast("Booking deleted successfully!", "success");
+      await fetchRegistrationsAndEvents();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to delete booking.", "error");
+      setIsLoading(false);
+    }
   };
 
   const formatDate = (isoString) => {
@@ -48,10 +62,10 @@ export default function AdminEventRegistrationsPage() {
   };
 
   const filteredRegistrations = registrations.filter(r => {
-    const matchesSearch = (r.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           r.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           r.mobile?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           r.eventName?.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = ((r.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (r.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (r.mobile || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (r.eventName || "").toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (filterEvent === "all") return matchesSearch;
     return matchesSearch && r.eventId === filterEvent;
@@ -59,6 +73,12 @@ export default function AdminEventRegistrationsPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon flex items-center gap-2">
@@ -70,25 +90,12 @@ export default function AdminEventRegistrationsPage() {
         </div>
         <button
           onClick={fetchRegistrationsAndEvents}
-          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Refresh</span>
         </button>
       </div>
-
-      {feedback.message && (
-        <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-            feedback.type === "error"
-              ? "bg-rose-50 border-rose-200 text-rose-800"
-              : "bg-emerald-50 border-emerald-200 text-emerald-800"
-          }`}
-        >
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
 
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -153,7 +160,7 @@ export default function AdminEventRegistrationsPage() {
                     </span>
                     <span className="bg-maroon/5 text-maroon text-[9px] font-bold uppercase px-2 py-0.5 rounded border border-maroon/10 flex items-center gap-1 font-serif">
                       <Calendar className="w-3 h-3 text-saffron" />
-                      {reg.eventName}
+                      {reg.eventName || reg.eventTitle}
                     </span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-dark-brown/70">
@@ -166,10 +173,17 @@ export default function AdminEventRegistrationsPage() {
                     )}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-3">
                   <span className="text-[10px] text-dark-brown/50 font-semibold tracking-wide">
                     Booked: {formatDate(reg.createdAt)}
                   </span>
+                  <button
+                    onClick={() => handleDeleteClick(reg)}
+                    className="p-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Booking"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
@@ -178,10 +192,10 @@ export default function AdminEventRegistrationsPage() {
                   <span className="text-dark-brown/50 font-bold block mb-0.5">Postal Address:</span>
                   <span className="text-dark-brown">{reg.address}</span>
                 </div>
-                {reg.participantsCount > 1 && reg.participantDetails && (
+                {reg.participants && (
                   <div className="pt-2.5 border-t border-gold/10">
                     <span className="text-dark-brown/50 font-bold block mb-1">Group Details:</span>
-                    <span className="text-dark-brown">{reg.participantDetails}</span>
+                    <span className="text-dark-brown">{reg.participants}</span>
                   </div>
                 )}
                 {reg.specialRequest && (

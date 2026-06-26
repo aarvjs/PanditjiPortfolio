@@ -4,8 +4,8 @@ import React from "react";
 import Image from "next/image";
 import SectionHeading from "./SectionHeading";
 
-export default function GuruGallery() {
-  const galleryImages = [
+export default function GuruGallery({ initialImages }) {
+  const staticImages = [
     {
       src: "/images/WhatsApp Image 2026-06-18 at 11.36.25.jpeg",
       alt: "Guru Ji - Devotional Discourse",
@@ -63,6 +63,8 @@ export default function GuruGallery() {
       caption: "Satsang Union"
     }
   ];
+
+  const galleryImages = initialImages && initialImages.length > 0 ? initialImages : staticImages;
 
   return (
     <section className="py-20 bg-cream">

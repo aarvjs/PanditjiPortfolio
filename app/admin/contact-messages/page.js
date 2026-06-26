@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Mail, CheckCircle, ShieldAlert, RefreshCw, Search, Check, Info } from "lucide-react";
+import { Mail, RefreshCw, Search, Check, Trash2 } from "lucide-react";
 import * as db from "../../../lib/db";
+import Toast from "../../../components/Toast";
 
 export default function ContactMessagesPage() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'new' | 'read'
 
@@ -22,15 +23,14 @@ export default function ContactMessagesPage() {
       setMessages(data);
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch contact messages.");
+      showToast("Failed to fetch contact messages.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const markAsRead = async (id) => {
@@ -39,10 +39,24 @@ export default function ContactMessagesPage() {
       setMessages(prev => 
         prev.map(m => m.id === id ? { ...m, status: "read" } : m)
       );
-      showFeedback("success", "Message marked as read.");
+      showToast("Message marked as read.", "success");
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to update message status.");
+      showToast("Failed to update message status.", "error");
+    }
+  };
+
+  const handleDeleteClick = async (msg) => {
+    if (!confirm(`Are you sure you want to delete the enquiry from "${msg.name}"?`)) return;
+    setIsLoading(true);
+    try {
+      await db.deleteContactSubmission(msg.id);
+      showToast("Message deleted successfully!", "success");
+      await fetchMessages();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to delete message.", "error");
+      setIsLoading(false);
     }
   };
 
@@ -56,9 +70,9 @@ export default function ContactMessagesPage() {
   };
 
   const filteredMessages = messages.filter(m => {
-    const matchesSearch = (m.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           m.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           m.message?.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = ((m.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (m.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (m.message || "").toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (filterStatus === "all") return matchesSearch;
     return matchesSearch && m.status === filterStatus;
@@ -66,6 +80,12 @@ export default function ContactMessagesPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon flex items-center gap-2">
@@ -77,32 +97,19 @@ export default function ContactMessagesPage() {
         </div>
         <button
           onClick={fetchMessages}
-          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Refresh</span>
         </button>
       </div>
 
-      {feedback.message && (
-        <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-            feedback.type === "error"
-              ? "bg-rose-50 border-rose-200 text-rose-800"
-              : "bg-emerald-50 border-emerald-200 text-emerald-800"
-          }`}
-        >
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
-
       {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="flex bg-white/60 border border-gold/25 rounded-xl p-1 overflow-hidden">
           <button
             onClick={() => setFilterStatus("all")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               filterStatus === "all" ? "bg-saffron text-white shadow-sm" : "text-dark-brown/70 hover:bg-gold/10"
             }`}
           >
@@ -110,7 +117,7 @@ export default function ContactMessagesPage() {
           </button>
           <button
             onClick={() => setFilterStatus("new")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               filterStatus === "new" ? "bg-saffron text-white shadow-sm" : "text-dark-brown/70 hover:bg-gold/10"
             }`}
           >
@@ -118,7 +125,7 @@ export default function ContactMessagesPage() {
           </button>
           <button
             onClick={() => setFilterStatus("read")}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               filterStatus === "read" ? "bg-saffron text-white shadow-sm" : "text-dark-brown/70 hover:bg-gold/10"
             }`}
           >
@@ -156,7 +163,7 @@ export default function ContactMessagesPage() {
             <div 
               key={msg.id} 
               className={`bg-white/80 border p-5 md:p-6 rounded-2xl shadow-sm transition-colors ${
-                msg.status === "new" ? "border-saffron border-l-4" : "border-gold/15"
+                msg.status === "new" ? "border-saffron border-l-4 shadow-saffron-100" : "border-gold/15"
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
@@ -183,20 +190,28 @@ export default function ContactMessagesPage() {
                   <span className="text-[10px] text-dark-brown/50 font-semibold tracking-wide">
                     {formatDate(msg.createdAt)}
                   </span>
-                  {msg.status === "new" && (
+                  <div className="flex gap-2">
+                    {msg.status === "new" && (
+                      <button
+                        onClick={() => markAsRead(msg.id)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Mark Read
+                      </button>
+                    )}
                     <button
-                      onClick={() => markAsRead(msg.id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-lg border border-emerald-200 transition-colors"
+                      onClick={() => handleDeleteClick(msg)}
+                      className="p-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg transition-colors cursor-pointer"
+                      title="Delete enquiry"
                     >
-                      <Check className="w-3 h-3" />
-                      Mark Read
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-cream/40 p-4 rounded-xl border border-gold/10 relative">
-                <Info className="w-4 h-4 text-gold/40 absolute top-4 right-4" />
+              <div className="bg-cream/40 p-4 rounded-xl border border-gold/10">
                 <p className="text-xs text-dark-brown whitespace-pre-wrap leading-relaxed pr-6">
                   {msg.message}
                 </p>

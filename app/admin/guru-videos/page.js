@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Play, Plus, Edit2, Trash2, ShieldAlert, CheckCircle, Search, ArrowLeft, Save } from "lucide-react";
+import { Play, Plus, Edit2, Trash2, Search, ArrowLeft, Save } from "lucide-react";
 import * as db from "../../../lib/db";
+import Toast from "../../../components/Toast";
 
 export default function AdminGuruVideosPage() {
   const [videos, setVideos] = useState([]);
   const [view, setView] = useState("list"); // 'list' | 'create' | 'edit'
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
@@ -29,20 +30,18 @@ export default function AdminGuruVideosPage() {
     setIsLoading(true);
     try {
       const data = await db.getGuruJiVideos();
-      // Sort by order asc
       const sorted = [...data].sort((a, b) => (a.order || 0) - (b.order || 0));
       setVideos(sorted);
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch videos from Firestore.");
+      showToast("Failed to fetch videos from Firestore.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleInputChange = (e) => {
@@ -50,59 +49,55 @@ export default function AdminGuruVideosPage() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Helper to extract YouTube video ID
+  // Helper to extract YouTube video ID using a robust regex
   const getYouTubeId = (url) => {
-    let videoId = "";
     if (!url) return "";
-    try {
-      if (url.includes("youtu.be/")) {
-        videoId = url.split("youtu.be/")[1].split("?")[0];
-      } else if (url.includes("youtube.com/watch")) {
-        videoId = url.split("v=")[1].split("&")[0];
-      } else if (url.includes("youtube.com/embed/")) {
-        videoId = url.split("youtube.com/embed/")[1].split("?")[0];
-      }
-    } catch (e) {
-      console.error("Error parsing YouTube ID:", e);
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return match[2];
     }
-    return videoId;
+    return "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || !form.youtubeUrl) {
-      showFeedback("error", "Please fill in all required fields.");
+      showToast("Please fill in all required fields.", "error");
       return;
     }
 
     const youtubeId = getYouTubeId(form.youtubeUrl);
     if (!youtubeId) {
-      showFeedback("error", "Could not extract video ID from YouTube URL. Please check the link.");
+      showToast("Could not extract a valid 11-digit video ID from YouTube URL. Please check the link format.", "error");
       return;
     }
 
     setIsLoading(true);
     try {
       const videoPayload = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        youtubeUrl: form.youtubeUrl,
         order: Number(form.order) || 1,
+        status: form.status,
         youtubeId: youtubeId,
         thumbnailUrl: `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`
       };
 
       if (view === "create") {
         await db.addGuruJiVideo(videoPayload);
-        showFeedback("success", "Video added successfully!");
+        showToast("Video added successfully!", "success");
       } else {
         await db.updateGuruJiVideo(editingId, videoPayload);
-        showFeedback("success", "Video updated successfully!");
+        showToast("Video updated successfully!", "success");
       }
 
       resetForm();
       await fetchVideos();
     } catch (err) {
       console.error(err);
-      showFeedback("error", err.message || "Failed to save video.");
+      showToast(err.message || "Failed to save video.", "error");
       setIsLoading(false);
     }
   };
@@ -124,11 +119,11 @@ export default function AdminGuruVideosPage() {
     setIsLoading(true);
     try {
       await db.deleteGuruJiVideo(video.id);
-      showFeedback("success", "Video deleted successfully!");
+      showToast("Video deleted successfully!", "success");
       await fetchVideos();
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to delete video.");
+      showToast("Failed to delete video.", "error");
       setIsLoading(false);
     }
   };
@@ -152,6 +147,12 @@ export default function AdminGuruVideosPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon flex items-center gap-2">
@@ -165,7 +166,7 @@ export default function AdminGuruVideosPage() {
         {view === "list" ? (
           <button
             onClick={() => setView("create")}
-            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5"
+            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Video</span>
@@ -173,24 +174,13 @@ export default function AdminGuruVideosPage() {
         ) : (
           <button
             onClick={resetForm}
-            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5"
+            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to list</span>
           </button>
         )}
       </div>
-
-      {feedback.message && (
-        <div className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-          feedback.type === "error" 
-            ? "bg-rose-50 border-rose-200 text-rose-800" 
-            : "bg-emerald-50 border-emerald-200 text-emerald-800"
-        }`}>
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
 
       {isLoading && view === "list" ? (
         <div className="py-20 flex justify-center items-center">
@@ -258,7 +248,7 @@ export default function AdminGuruVideosPage() {
                           {video.order || 1}
                         </td>
                         <td className="p-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
                             video.status === "published"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -270,13 +260,15 @@ export default function AdminGuruVideosPage() {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleEditClick(video)}
-                              className="p-1.5 hover:bg-gold-light/45 text-maroon rounded-lg transition-colors border border-transparent hover:border-gold/15"
+                              className="p-1.5 hover:bg-gold-light/45 text-maroon rounded-lg transition-colors border border-transparent hover:border-gold/15 cursor-pointer"
+                              title="Edit video"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(video)}
-                              className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                              className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors border border-transparent hover:border-rose-200 cursor-pointer"
+                              title="Delete video"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -292,7 +284,7 @@ export default function AdminGuruVideosPage() {
         </>
       ) : (
         /* Form View */
-        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm">
+        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm font-sans">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
@@ -381,22 +373,22 @@ export default function AdminGuruVideosPage() {
 
             </div>
 
-            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3">
+            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3 font-sans">
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={isLoading}
-                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors"
+                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>{isLoading ? "Saving..." : "Save Video"}</span>
+                <span>{isLoading ? "Saving..." : view === "edit" ? "Update Video" : "Save Video"}</span>
               </button>
             </div>
           </form>

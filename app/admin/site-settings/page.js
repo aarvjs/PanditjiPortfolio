@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Save, CheckCircle, ShieldAlert } from "lucide-react";
+import { Settings, Save } from "lucide-react";
 import * as db from "../../../lib/db";
+import Toast from "../../../components/Toast";
 
 export default function SiteSettingsPage() {
   const [form, setForm] = useState({
     organizationName: "",
     tagline: "",
+    heroTitle: "",
+    heroDescription: "",
     phone: "",
     whatsapp: "",
     email: "",
@@ -20,7 +23,7 @@ export default function SiteSettingsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
 
   useEffect(() => {
     fetchSettings();
@@ -34,6 +37,8 @@ export default function SiteSettingsPage() {
         setForm({
           organizationName: data.organizationName || "",
           tagline: data.tagline || "",
+          heroTitle: data.heroTitle || "",
+          heroDescription: data.heroDescription || "",
           phone: data.phone || "",
           whatsapp: data.whatsapp || "",
           email: data.email || "",
@@ -47,15 +52,14 @@ export default function SiteSettingsPage() {
       }
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch site settings.");
+      showToast("Failed to fetch site settings.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleInputChange = (e) => {
@@ -68,10 +72,10 @@ export default function SiteSettingsPage() {
     setIsSaving(true);
     try {
       await db.updateSiteSettings(form);
-      showFeedback("success", "Site settings updated successfully.");
+      showToast("Site settings updated successfully.", "success");
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to update site settings.");
+      showToast("Failed to update site settings.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -87,27 +91,20 @@ export default function SiteSettingsPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon">Site Settings</h2>
           <p className="text-xs text-dark-brown/70 mt-1">
-            Manage public details, contact info, and social media links.
+            Manage public details, contact info, home hero content, and social media links.
           </p>
         </div>
       </div>
-
-      {feedback.message && (
-        <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-            feedback.type === "error"
-              ? "bg-rose-50 border-rose-200 text-rose-800"
-              : "bg-emerald-50 border-emerald-200 text-emerald-800"
-          }`}
-        >
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
 
       <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -137,6 +134,32 @@ export default function SiteSettingsPage() {
                   value={form.tagline}
                   onChange={handleInputChange}
                   className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5">
+                  Hero Title
+                </label>
+                <input
+                  type="text"
+                  name="heroTitle"
+                  value={form.heroTitle}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Spiritual Haven for Love, Devotion..."
+                  className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-dark-brown/70 mb-1.5">
+                  Hero Description
+                </label>
+                <textarea
+                  name="heroDescription"
+                  rows="3"
+                  value={form.heroDescription}
+                  onChange={handleInputChange}
+                  placeholder="e.g. Under the supreme spiritual lineage..."
+                  className="w-full bg-white border border-gold/25 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-saffron text-dark-brown resize-none"
                 />
               </div>
               <div>
@@ -245,11 +268,11 @@ export default function SiteSettingsPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gold/15 flex justify-end">
+          <div className="pt-4 border-t border-gold/15 flex justify-end font-sans">
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
+              className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{isSaving ? "Saving..." : "Save Settings"}</span>

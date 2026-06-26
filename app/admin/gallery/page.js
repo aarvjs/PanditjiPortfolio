@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { 
-  ImageIcon, Video, Plus, Trash2, ArrowLeft, Upload, 
+  ImageIcon, Video, Plus, Trash2, Edit3, ArrowLeft, Upload, 
   ShieldAlert, CheckCircle, Play, Layers, ExternalLink 
 } from "lucide-react";
 import * as db from "../../../lib/db";
 import { uploadImage, deleteImage } from "../../../lib/upload";
+import Toast from "../../../components/Toast";
 
 export default function AdminGalleryPage() {
   const [items, setItems] = useState([]);
-  const [view, setView] = useState("list"); // 'list' | 'create'
+  const [view, setView] = useState("list"); // 'list' | 'create' | 'edit'
+  const [editingId, setEditingId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   
   const [filterType, setFilterType] = useState("all"); // 'all' | 'image' | 'video'
   const [form, setForm] = useState({
@@ -41,15 +43,14 @@ export default function AdminGalleryPage() {
       setItems(data.sort((a, b) => (a.order || 0) - (b.order || 0)));
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch gallery items.");
+      showToast("Failed to fetch gallery items.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
   };
 
   const handleInputChange = (e) => {
@@ -70,6 +71,22 @@ export default function AdminGalleryPage() {
     }
   };
 
+  const handleEditClick = (item) => {
+    setForm({
+      title: item.title || "",
+      category: item.category || "Satsang Events",
+      type: item.type || "image",
+      imageUrl: item.imageUrl || item.url || "",
+      imageStoragePath: item.imageStoragePath || "",
+      videoUrl: item.videoUrl || "",
+      order: item.order || 1
+    });
+    setEditingId(item.id);
+    setImagePreview(item.type === "image" ? (item.imageUrl || item.url) : "");
+    setImageFile(null);
+    setView("edit");
+  };
+
   // Helper to get Youtube video thumbnail from its video link
   const getYoutubeThumbnail = (url) => {
     if (!url) return "";
@@ -87,7 +104,7 @@ export default function AdminGalleryPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || (form.type === "video" && !form.videoUrl) || (form.type === "image" && !imageFile && !form.imageUrl)) {
-      showFeedback("error", "Please fill in all required fields.");
+      showToast("Please fill in all required fields.", "error");
       return;
     }
 
@@ -101,6 +118,10 @@ export default function AdminGalleryPage() {
 
       // Handle Image Upload
       if (form.type === "image" && imageFile) {
+        // If editing and previous image existed in storage, delete it first
+        if (view === "edit" && form.imageStoragePath) {
+          await deleteImage(form.imageStoragePath);
+        }
         const uploadResult = await uploadImage(imageFile, "gallery");
         imageUrl = uploadResult.downloadUrl;
         imageStoragePath = uploadResult.storagePath;
@@ -112,20 +133,28 @@ export default function AdminGalleryPage() {
       }
 
       const galleryPayload = {
-        ...form,
+        title: form.title,
+        category: form.category,
+        type: form.type,
         imageUrl,
         imageStoragePath,
-        videoUrl: form.type === "video" ? videoUrl : ""
+        videoUrl: form.type === "video" ? videoUrl : "",
+        order: form.order
       };
 
-      await db.addGalleryItem(galleryPayload);
-      showFeedback("success", "Gallery item uploaded successfully!");
+      if (view === "edit") {
+        await db.updateGalleryItem(editingId, galleryPayload);
+        showToast("Gallery item updated successfully!", "success");
+      } else {
+        await db.addGalleryItem(galleryPayload);
+        showToast("Gallery item uploaded successfully!", "success");
+      }
 
       resetForm();
       await fetchGallery();
     } catch (err) {
       console.error(err);
-      showFeedback("error", err.message || "Failed to add item.");
+      showToast(err.message || "Failed to save item.", "error");
     } finally {
       setIsLoading(false);
       setUploading(false);
@@ -142,11 +171,11 @@ export default function AdminGalleryPage() {
       }
       // 2. Delete document from Firestore
       await db.deleteGalleryItem(item.id);
-      showFeedback("success", "Gallery item deleted successfully!");
+      showToast("Gallery item deleted successfully!", "success");
       await fetchGallery();
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to delete item.");
+      showToast("Failed to delete item.", "error");
       setIsLoading(false);
     }
   };
@@ -163,6 +192,7 @@ export default function AdminGalleryPage() {
     });
     setImageFile(null);
     setImagePreview("");
+    setEditingId(null);
     setView("list");
   };
 
@@ -173,11 +203,17 @@ export default function AdminGalleryPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       {/* Top action header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon">
-            {view === "list" ? "Guru Ji Gallery" : "Upload Gallery Item"}
+            {view === "list" ? "Guru Ji Gallery" : view === "create" ? "Upload Gallery Item" : "Edit Gallery Item"}
           </h2>
           <p className="text-xs text-dark-brown/70 mt-1">
             {view === "list" 
@@ -190,7 +226,7 @@ export default function AdminGalleryPage() {
         {view === "list" ? (
           <button
             onClick={() => setView("create")}
-            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5"
+            className="px-4 py-2 bg-saffron hover:bg-maroon text-white text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Item</span>
@@ -198,7 +234,7 @@ export default function AdminGalleryPage() {
         ) : (
           <button
             onClick={resetForm}
-            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5"
+            className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to gallery</span>
@@ -227,7 +263,7 @@ export default function AdminGalleryPage() {
           <div className="flex gap-2 border-b border-gold/10 pb-1">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
+              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border cursor-pointer ${
                 filterType === "all"
                   ? "bg-maroon text-white border-maroon shadow-sm"
                   : "bg-white text-dark-brown/70 border-gold/20 hover:border-gold/50"
@@ -237,7 +273,7 @@ export default function AdminGalleryPage() {
             </button>
             <button
               onClick={() => setFilterType("image")}
-              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border flex items-center gap-1 ${
+              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border flex items-center gap-1 cursor-pointer ${
                 filterType === "image"
                   ? "bg-maroon text-white border-maroon shadow-sm"
                   : "bg-white text-dark-brown/70 border-gold/20 hover:border-gold/50"
@@ -248,7 +284,7 @@ export default function AdminGalleryPage() {
             </button>
             <button
               onClick={() => setFilterType("video")}
-              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border flex items-center gap-1 ${
+              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border flex items-center gap-1 cursor-pointer ${
                 filterType === "video"
                   ? "bg-maroon text-white border-maroon shadow-sm"
                   : "bg-white text-dark-brown/70 border-gold/20 hover:border-gold/50"
@@ -306,9 +342,9 @@ export default function AdminGalleryPage() {
                         <span className="text-[9px] uppercase font-bold text-saffron tracking-wider">
                           {item.category}
                         </span>
-                        <span className="text-[8px] font-black text-dark-brown/40">ORDER: {item.order}</span>
+                        <span className="text-[8px] font-black text-dark-brown/40 font-mono">ORDER: {item.order}</span>
                       </div>
-                      <h4 className="font-serif text-sm font-bold text-maroon mt-1 leading-tight">
+                      <h4 className="font-serif text-sm font-bold text-maroon mt-1 leading-tight line-clamp-2">
                         {item.title}
                       </h4>
                     </div>
@@ -325,16 +361,25 @@ export default function AdminGalleryPage() {
                           <ExternalLink className="w-2.5 h-2.5" />
                         </a>
                       ) : (
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase">Image File</span>
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase font-semibold">Image File</span>
                       )}
                       
-                      <button
-                        onClick={() => handleDeleteClick(item)}
-                        className="p-1 hover:bg-rose-50 text-rose-600 rounded border border-transparent hover:border-rose-200 transition-colors"
-                        title="Delete item"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleEditClick(item)}
+                          className="p-1 hover:bg-gold-light/20 text-maroon rounded border border-transparent hover:border-gold/15 transition-colors cursor-pointer"
+                          title="Edit item"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(item)}
+                          className="p-1 hover:bg-rose-50 text-rose-600 rounded border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                          title="Delete item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -344,7 +389,7 @@ export default function AdminGalleryPage() {
         </>
       ) : (
         /* Form View */
-        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm max-w-xl mx-auto">
+        <div className="bg-white/80 border border-gold/15 p-6 md:p-8 rounded-3xl shadow-sm max-w-xl mx-auto font-sans">
           <form onSubmit={handleSubmit} className="space-y-5">
             
             {/* Type selector */}
@@ -356,7 +401,7 @@ export default function AdminGalleryPage() {
                 <button
                   type="button"
                   onClick={() => setForm(prev => ({ ...prev, type: "image", videoUrl: "" }))}
-                  className={`py-3 rounded-xl font-bold text-xs uppercase tracking-wider border flex items-center justify-center gap-1.5 transition-all ${
+                  className={`py-3 rounded-xl font-bold text-xs uppercase tracking-wider border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     form.type === "image"
                       ? "bg-maroon text-white border-maroon shadow-md"
                       : "bg-white text-dark-brown/70 border-gold/25 hover:border-maroon"
@@ -368,7 +413,7 @@ export default function AdminGalleryPage() {
                 <button
                   type="button"
                   onClick={() => setForm(prev => ({ ...prev, type: "video", imageUrl: "", imageStoragePath: "" }))}
-                  className={`py-3 rounded-xl font-bold text-xs uppercase tracking-wider border flex items-center justify-center gap-1.5 transition-all ${
+                  className={`py-3 rounded-xl font-bold text-xs uppercase tracking-wider border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     form.type === "video"
                       ? "bg-maroon text-white border-maroon shadow-md"
                       : "bg-white text-dark-brown/70 border-gold/25 hover:border-maroon"
@@ -449,7 +494,7 @@ export default function AdminGalleryPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      required
+                      required={view !== "edit"}
                       onChange={handleFileChange}
                       id="gallery-photo-upload"
                       className="hidden"
@@ -489,21 +534,21 @@ export default function AdminGalleryPage() {
             )}
 
             {/* Submit & Cancel Buttons */}
-            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3">
+            <div className="pt-4 border-t border-gold/15 flex justify-end gap-3 font-sans">
               <button
                 type="button"
                 onClick={resetForm}
                 disabled={isLoading}
-                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors"
+                className="px-5 py-2.5 bg-cream-dark/45 hover:bg-gold-light/30 text-dark-brown font-bold text-xs uppercase tracking-wider rounded-full transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {uploading ? "Uploading Content..." : "Add to Gallery"}
+                {uploading ? "Saving Content..." : view === "edit" ? "Update Item" : "Add to Gallery"}
               </button>
             </div>
           </form>

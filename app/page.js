@@ -16,7 +16,10 @@ import {
   getCampaigns, 
   getGalleryItems, 
   getAnnouncements,
-  getGuruJiVideos
+  getGuruJiVideos,
+  getGuruJiImages,
+  getAboutContent,
+  getSiteSettings
 } from "../lib/db";
 import { Flame, HeartHandshake, Compass, Users, Sparkles, ArrowRight, ArrowUpRight } from "lucide-react";
 
@@ -25,9 +28,11 @@ export default async function HomePage() {
   const quotes = await getQuotes();
   const events = await getEvents();
   const campaigns = await getCampaigns();
-  const gallery = await getGalleryItems();
   const announcements = await getAnnouncements();
   const videos = await getGuruJiVideos();
+  const guruJiImages = await getGuruJiImages();
+  const aboutContent = await getAboutContent();
+  const siteSettings = await getSiteSettings();
 
   // Get active campaigns (Slice to 3 instead of 2)
   const activeCampaigns = campaigns.filter(c => c.status === "active").slice(0, 3);
@@ -37,6 +42,9 @@ export default async function HomePage() {
 
   // Get published videos
   const publishedVideos = videos.filter(v => v.status === "published" || !v.status);
+
+  // Get published Guru Ji Images
+  const publishedImages = (guruJiImages || []).filter(img => img.status === "published" || !img.status);
 
   // Get latest quote
   const latestQuote = quotes[0] || {
@@ -82,11 +90,12 @@ export default async function HomePage() {
       <main className="flex-grow bg-mandala-pattern">
         
         {/* ================= 1. HOME HERO SECTION ================= */}
-        <HomeHero />
+        <HomeHero settings={siteSettings} />
 
         {/* ================= 2. GURU JI PHOTO GALLERY SECTION ================= */}
-        <GuruGallery />
+        <GuruGallery initialImages={publishedImages} />
 
+        {/* ================= 3. YOUTUBE VIDEO SECTION ================= */}
         <VideoSection videos={publishedVideos} />
 
         {/* ================= 4. QUOTE SECTION ================= */}
@@ -123,7 +132,7 @@ export default async function HomePage() {
                 <div className="relative z-10 w-64 sm:w-72 bg-gradient-to-br from-white to-cream-dark border-2 border-gold/45 rounded-3xl p-3.5 shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl group">
                   <div className="rounded-2xl overflow-hidden aspect-[4/5] relative bg-gold-light/25 border border-gold/10 p-0.5">
                     <img
-                      src="/images/WhatsApp Image 2026-06-18 at 11.36.27 (1).jpeg"
+                      src={aboutContent?.guruJiImageUrl || "/images/WhatsApp Image 2026-06-18 at 11.36.27 (1).jpeg"}
                       alt="Guru Ji guidance and satsang"
                       className="w-full h-full object-cover rounded-xl transition-transform duration-700 group-hover:scale-103"
                     />
@@ -148,12 +157,12 @@ export default async function HomePage() {
 
                 {/* Section Heading */}
                 <h2 className="text-2xl sm:text-4xl font-bold font-serif text-maroon text-saffron-glow leading-snug">
-                  Spiritual Haven for Love, Devotion, and Selfless Service
+                  {aboutContent?.heroTitle || "Spiritual Haven for Love, Devotion, and Selfless Service"}
                 </h2>
 
                 {/* Paragraph */}
                 <p className="text-sm sm:text-base text-dark-brown/90 leading-relaxed font-sans">
-                  Under the supreme spiritual lineage of Jagadguru Shri Kripalu Ji Maharaj, Neelmani Kripalu Satsang is a sacred sanctuary where thirsty souls gather to drink the nectar of pure devotion (Bhakti Yoga). We walk the path of scriptural wisdom, guiding seekers in practical Roopdhyana meditation and active sankirtan chanting to cleanse the mind and awaken the spirit.
+                  {aboutContent?.guruJiIntro || "Under the supreme spiritual lineage of Jagadguru Shri Kripalu Ji Maharaj, Neelmani Kripalu Satsang is a sacred sanctuary where thirsty souls gather to drink the nectar of pure devotion (Bhakti Yoga). We walk the path of scriptural wisdom, guiding seekers in practical Roopdhyana meditation and active sankirtan chanting to cleanse the mind and awaken the spirit."}
                 </p>
 
                 {/* Three feature points */}

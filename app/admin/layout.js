@@ -83,6 +83,7 @@ export default function AdminLayout({ children }) {
     { name: "Events", href: "/admin/events", icon: <Calendar className="w-4 h-4" /> },
     { name: "Seva Campaigns", href: "/admin/seva", icon: <HeartHandshake className="w-4 h-4" /> },
     { name: "Guru Ji Gallery", href: "/admin/gallery", icon: <ImageIcon className="w-4 h-4" /> },
+    { name: "Guru Ji Photos", href: "/admin/guru-images", icon: <ImageIcon className="w-4 h-4" /> },
     { name: "YouTube Videos", href: "/admin/guru-videos", icon: <Video className="w-4 h-4" /> },
     { name: "Announcements", href: "/admin/announcements", icon: <Bell className="w-4 h-4" /> },
     { name: "Daily Quotes", href: "/admin/quotes", icon: <Quote className="w-4 h-4" /> },

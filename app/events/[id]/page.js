@@ -4,8 +4,8 @@ import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import PageHero from "../../../components/PageHero";
 import EventRegistrationForm from "../../../components/EventRegistrationForm";
-import { getEventById, getEvents } from "../../../lib/db";
-import { Calendar, Clock, MapPin, Phone, User, Globe, ChevronLeft } from "lucide-react";
+import { getEventById } from "../../../lib/db";
+import { Calendar, Clock, MapPin, Phone, User, Globe, ChevronLeft, DollarSign } from "lucide-react";
 
 // Dynamic metadata generation for SEO
 export async function generateMetadata({ params }) {
@@ -42,7 +42,9 @@ export default async function EventDetailPage({ params }) {
     { name: event.title, path: "" }
   ];
 
-  const isPast = new Date().toISOString().split("T")[0] > event.date;
+  const today = new Date().toISOString().split("T")[0];
+  const isPast = today > event.date;
+  const isRegistrationClosed = event.registrationLastDate && today > event.registrationLastDate;
 
   return (
     <>
@@ -84,7 +86,7 @@ export default async function EventDetailPage({ params }) {
                 <div className="absolute top-4 right-4 z-10 flex gap-2">
                   <span className={`py-1.5 px-3 rounded-full text-[10px] font-bold tracking-wider shadow-sm uppercase flex items-center gap-1 ${
                     event.isOnline 
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                      ? "bg-indigo-50 text-indigo-700 border border-indigo-200" 
                       : "bg-amber-50 text-amber-800 border border-amber-200"
                   }`}>
                     {event.isOnline ? <Globe className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
@@ -133,6 +135,52 @@ export default async function EventDetailPage({ params }) {
                 </div>
               </div>
 
+              {/* Gathering Specific Details Block */}
+              <div className="bg-white/60 border border-gold/15 rounded-2xl p-5 md:p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-saffron/10 text-saffron rounded-xl shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-dark-brown/40 font-serif">VENUE / ROOM</span>
+                    <span className="text-xs font-bold text-dark-brown block leading-snug">{event.venue || "Main Hall"}</span>
+                    <span className="block text-[10px] text-dark-brown/60 mt-0.5">{event.location}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-saffron/10 text-saffron rounded-xl shrink-0">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-dark-brown/40 font-serif">CONTRIBUTION DETAILS</span>
+                    <span className="text-xs font-bold text-dark-brown block leading-snug">{event.contributionDetails || "Free / Voluntary Contribution"}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-saffron/10 text-saffron rounded-xl shrink-0">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-dark-brown/40 font-serif">REGISTRATION LAST DATE</span>
+                    <span className="text-xs font-bold text-rose-700 block leading-snug">
+                      {event.registrationLastDate ? event.registrationLastDate : "Open until seats fill"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 bg-saffron/10 text-saffron rounded-xl shrink-0">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-extrabold uppercase tracking-wider text-dark-brown/40 font-serif">CONTACT NUMBERS</span>
+                    <span className="text-xs font-bold text-dark-brown block leading-snug">{event.contactNumbers || "Helpline Numbers"}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Details & Outlines */}
               <div className="space-y-4">
                 <h3 className="font-serif text-lg md:text-xl font-bold text-maroon border-b border-gold/15 pb-2">
@@ -154,9 +202,9 @@ export default async function EventDetailPage({ params }) {
                     <div className="absolute inset-0 bg-[radial-gradient(#C5A880_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
                     <div className="relative text-center p-6 space-y-2 z-10 bg-white/95 rounded-2xl border border-gold/20 shadow-md max-w-sm mx-auto">
                       <MapPin className="w-7 h-7 text-saffron mx-auto animate-bounce" />
-                      <h4 className="font-serif text-xs font-bold text-maroon">{event.location}</h4>
+                      <h4 className="font-serif text-xs font-bold text-maroon">{event.venue || "Main Hall"}</h4>
                       <p className="text-[10px] text-dark-brown/60 leading-normal">
-                        Clicking open maps redirects to standard Google Maps coordinates.
+                        {event.location}
                       </p>
                       <a
                         href={event.googleMapUrl || "https://maps.google.com"}
@@ -174,14 +222,19 @@ export default async function EventDetailPage({ params }) {
 
             {/* Right Column: Reservation form */}
             <div className="lg:col-span-4 space-y-6">
-              {!isPast ? (
+              {!isPast && !isRegistrationClosed ? (
                 <EventRegistrationForm eventId={event.id} eventTitle={event.title} />
               ) : (
                 <div className="bg-stone-50 border border-stone-200 p-6 rounded-2xl text-center">
                   <Calendar className="w-8 h-8 text-stone-400 mx-auto mb-2" />
-                  <h3 className="font-serif text-base font-bold text-stone-700">Gathering Concluded</h3>
-                  <p className="text-xs text-stone-500 mt-2 leading-relaxed">
-                    This weekly satsang was held on {event.date}. Seat reservations are closed. Please browse our upcoming schedules to register.
+                  <h3 className="font-serif text-base font-bold text-stone-700">
+                    {isPast ? "Gathering Concluded" : "Registration Closed"}
+                  </h3>
+                  <p className="text-xs text-stone-500 mt-2 leading-relaxed font-sans">
+                    {isPast 
+                      ? `This weekly satsang was held on ${event.date}. Seat reservations are closed.`
+                      : `The last date to register for this event was ${event.registrationLastDate}.`
+                    } Please browse our upcoming schedules to register.
                   </p>
                 </div>
               )}
@@ -190,10 +243,10 @@ export default async function EventDetailPage({ params }) {
               <div className="bg-white/60 border border-gold/15 p-5 rounded-2xl shadow-sm text-center">
                 <Phone className="w-5 h-5 text-saffron mx-auto mb-2" />
                 <h4 className="font-serif text-xs font-bold text-maroon">Need Seat Assistance?</h4>
-                <p className="text-[11px] text-dark-brown/60 leading-relaxed mt-1">
+                <p className="text-[11px] text-dark-brown/60 leading-relaxed mt-1 font-sans">
                   Have group registrations or need wheelchair assistance? Reach our helpline:
                 </p>
-                <span className="block text-xs font-bold text-saffron mt-1.5">+91 98765 43210</span>
+                <span className="block text-xs font-bold text-saffron mt-1.5">{event.contactNumbers || "+91 98765 43210"}</span>
               </div>
             </div>
 

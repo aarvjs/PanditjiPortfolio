@@ -52,13 +52,10 @@ export default function VideoSection({ videos: propVideos }) {
     let videoId = "dQw4w9WgXcQ"; // Default fallback
     if (!url) return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
     try {
-      if (url.includes("youtube.com/embed/")) {
-        return `${url}${url.includes("?") ? "&" : "?"}autoplay=1&rel=0`;
-      }
-      if (url.includes("youtu.be/")) {
-        videoId = url.split("youtu.be/")[1].split("?")[0];
-      } else if (url.includes("youtube.com/watch")) {
-        videoId = url.split("v=")[1].split("&")[0];
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
       }
     } catch (e) {
       console.error("Error parsing youtube URL", e);
@@ -134,10 +131,13 @@ export default function VideoSection({ videos: propVideos }) {
                       className="w-full h-full relative cursor-pointer"
                     >
                       <img
-                        src={vid.thumbnail}
+                        src={vid.thumbnailUrl || vid.thumbnail || (vid.youtubeId ? `https://img.youtube.com/vi/${vid.youtubeId}/mqdefault.jpg` : "")}
                         alt={vid.title}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80";
+                        }}
                       />
                       {/* Overlay shadow */}
                       <div className="absolute inset-0 bg-black/25 group-hover:bg-black/35 transition-colors duration-300" />

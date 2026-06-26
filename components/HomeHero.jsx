@@ -7,9 +7,11 @@ import { Sparkles, Calendar, Heart, HeartHandshake } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 
-export default function HomeHero() {
+export default function HomeHero({ settings }) {
   const { t } = useLanguage();
-  const { settings } = useSiteSettings();
+  const { settings: contextSettings } = useSiteSettings();
+
+  const mergedSettings = settings || contextSettings || {};
 
   return (
     <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center bg-gradient-to-b from-cream via-[#FFFDF9] to-cream-dark/20 overflow-hidden pt-28 pb-16 border-b border-gold/15">
@@ -31,12 +33,12 @@ export default function HomeHero() {
             {/* Saffron Welcome Badge */}
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-saffron/10 border border-saffron/20 rounded-full text-[10px] sm:text-xs font-bold font-serif uppercase tracking-widest text-saffron">
               <Sparkles className="w-3.5 h-3.5 text-saffron animate-pulse" />
-              <span>{settings.tagline || t("divine_guidance")}</span>
+              <span>{mergedSettings.tagline || t("divine_guidance")}</span>
             </div>
  
             {/* Main Spiritual Heading */}
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-serif text-maroon text-saffron-glow leading-[1.15] tracking-wide max-w-2xl">
-              {settings.organizationName || t("hero_title")}
+              {mergedSettings.heroTitle || mergedSettings.organizationName || t("hero_title")}
             </h1>
 
             {/* Guru Ji Name & Designation in Portfolio Style */}
@@ -52,7 +54,7 @@ export default function HomeHero() {
  
             {/* Spiritual Paragraph */}
             <p className="text-sm sm:text-base md:text-lg text-dark-brown/80 font-medium leading-relaxed max-w-xl">
-              {t("hero_desc")}
+              {mergedSettings.heroDescription || t("hero_desc")}
             </p>
  
             {/* CTA Actions (Join Satsang, Upcoming Events) */}

@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Users, CheckCircle, ShieldAlert, RefreshCw, Search, Check, Info } from "lucide-react";
+import { Users, RefreshCw, Search, Trash2 } from "lucide-react";
 import * as db from "../../../lib/db";
+import Toast from "../../../components/Toast";
 
 export default function AdminVolunteersPage() {
   const [volunteers, setVolunteers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [toast, setToast] = useState({ message: "", type: "success" });
   const [searchQuery, setSearchQuery] = useState("");
   const [filterInterest, setFilterInterest] = useState("all");
 
@@ -22,15 +23,28 @@ export default function AdminVolunteersPage() {
       setVolunteers(data);
     } catch (err) {
       console.error(err);
-      showFeedback("error", "Failed to fetch volunteer applications.");
+      showToast("Failed to fetch volunteer applications.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const showFeedback = (type, message) => {
-    setFeedback({ type, message });
-    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
+  const handleDeleteClick = async (vol) => {
+    if (!confirm(`Are you sure you want to delete the volunteer application of "${vol.name}"?`)) return;
+    setIsLoading(true);
+    try {
+      await db.deleteVolunteerRegistration(vol.id);
+      showToast("Volunteer application deleted successfully!", "success");
+      await fetchVolunteers();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to delete volunteer application.", "error");
+      setIsLoading(false);
+    }
   };
 
   const formatDate = (isoString) => {
@@ -52,10 +66,10 @@ export default function AdminVolunteersPage() {
   ];
 
   const filteredVolunteers = volunteers.filter(v => {
-    const matchesSearch = (v.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           v.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           v.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           v.message?.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch = ((v.name || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           (v.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (v.city || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           (v.message || "").toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (filterInterest === "all") return matchesSearch;
     return matchesSearch && v.interestArea === filterInterest;
@@ -63,6 +77,12 @@ export default function AdminVolunteersPage() {
 
   return (
     <div className="space-y-6 animate-fade-up font-sans">
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: "", type: "success" })} 
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gold/15 pb-4">
         <div>
           <h2 className="font-serif text-2xl font-black text-maroon flex items-center gap-2">
@@ -74,25 +94,12 @@ export default function AdminVolunteersPage() {
         </div>
         <button
           onClick={fetchVolunteers}
-          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 bg-cream-dark/50 hover:bg-gold-light/40 text-maroon text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-300 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Refresh</span>
         </button>
       </div>
-
-      {feedback.message && (
-        <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
-            feedback.type === "error"
-              ? "bg-rose-50 border-rose-200 text-rose-800"
-              : "bg-emerald-50 border-emerald-200 text-emerald-800"
-          }`}
-        >
-          {feedback.type === "error" ? <ShieldAlert className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-          <span>{feedback.message}</span>
-        </div>
-      )}
 
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -172,10 +179,17 @@ export default function AdminVolunteersPage() {
                     )}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-3">
                   <span className="text-[10px] text-dark-brown/50 font-semibold tracking-wide">
                     Submitted: {formatDate(vol.createdAt)}
                   </span>
+                  <button
+                    onClick={() => handleDeleteClick(vol)}
+                    className="p-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Application"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
