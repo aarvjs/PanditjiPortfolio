@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Calendar, HeartHandshake, Image as ImageIcon, Bell, Quote, BookOpen, 
-  Users, Mail, ShieldAlert, Sparkles, PlusCircle, ArrowUpRight, CheckCircle 
+  Users, Mail, ShieldAlert, Sparkles, PlusCircle, ArrowUpRight, CheckCircle, MapPin
 } from "lucide-react";
 import * as db from "../../../lib/db";
 
@@ -19,7 +19,11 @@ export default function AdminDashboardPage() {
     volunteers: 0,
     registrations: 0,
     contacts: 0,
-    unreadContacts: 0
+    unreadContacts: 0,
+    library: 0,
+    ashrams: 0,
+    lostItems: 0,
+    festivals: 0
   });
   const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +43,8 @@ export default function AdminDashboardPage() {
       setIsLoading(true);
       try {
         const [
-          evs, camps, gal, anns, qts, blgs, vols, regs, cons
+          evs, camps, gal, anns, qts, blgs, vols, regs, cons,
+          libs, ashramsList, losts, fests
         ] = await Promise.all([
           db.getEvents(),
           db.getCampaigns(),
@@ -49,7 +54,11 @@ export default function AdminDashboardPage() {
           db.getBlogs(),
           db.getVolunteerRegistrations(),
           db.getEventRegistrations(),
-          db.getContactSubmissions()
+          db.getContactSubmissions(),
+          db.getELibraryResources(),
+          db.getAshrams(),
+          db.getLostItems(),
+          db.getFestivals()
         ]);
 
         const unread = cons.filter(c => c.status === "new").length;
@@ -64,7 +73,11 @@ export default function AdminDashboardPage() {
           volunteers: vols.length,
           registrations: regs.length,
           contacts: cons.length,
-          unreadContacts: unread
+          unreadContacts: unread,
+          library: libs.length,
+          ashrams: ashramsList.length,
+          lostItems: losts.filter(l => l.status === "unresolved").length,
+          festivals: fests.length
         });
 
         // Aggregate recent submissions
@@ -154,6 +167,10 @@ export default function AdminDashboardPage() {
   const statCards = [
     { title: "Upcoming Events", count: stats.events, icon: <Calendar className="w-5 h-5 text-saffron" />, href: "/admin/events", color: "border-saffron/20", desc: "Satsang & retreats scheduled" },
     { title: "Seva Campaigns", count: stats.campaigns, icon: <HeartHandshake className="w-5 h-5 text-saffron" />, href: "/admin/seva", color: "border-gold/20", desc: "Donations & outreach programs" },
+    { title: "E-Library", count: stats.library, icon: <BookOpen className="w-5 h-5 text-emerald-600" />, href: "/admin/e-library", color: "border-emerald-600/20", desc: "eBooks, bhajans & teachings" },
+    { title: "Ashram Locator", count: stats.ashrams, icon: <MapPin className="w-5 h-5 text-saffron" />, href: "/admin/ashrams", color: "border-saffron/20", desc: "Ashrams, temples & branches" },
+    { title: "Lost & Found", count: stats.lostItems, icon: <ShieldAlert className="w-5 h-5 text-rose-600" />, href: "/admin/lost-found", color: "border-rose-600/20", desc: "Unresolved visitor reports" },
+    { title: "Festival Passes", count: stats.festivals, icon: <Calendar className="w-5 h-5 text-amber-600" />, href: "/admin/festivals", color: "border-amber-600/20", desc: "Grand celebrations registered" },
     { title: "Volunteer Requests", count: stats.volunteers, icon: <Users className="w-5 h-5 text-maroon" />, href: "/admin/volunteers", color: "border-maroon/20", desc: "Registered sevadars" },
     { title: "Seat Bookings", count: stats.registrations, icon: <CheckCircle className="w-5 h-5 text-emerald-600" />, href: "/admin/event-registrations", color: "border-emerald-600/20", desc: "Confirmed event bookings" },
     { title: "Pending Enquiries", count: stats.unreadContacts, icon: <Mail className="w-5 h-5 text-amber-500" />, href: "/admin/contact-messages", color: "border-amber-500/20", desc: "New visitor messages", alert: stats.unreadContacts > 0 },

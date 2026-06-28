@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Phone, Mail, Flame } from "lucide-react";
+import { Phone, Mail, Flame, Heart } from "lucide-react";
 import Navbar from "./Navbar";
 import { useLanguage } from "../context/LanguageContext";
 import { useSiteSettings } from "../context/SiteSettingsContext";
@@ -16,8 +16,8 @@ export default function Header() {
     <>
       {/* ================= LEVEL 1: TOP HEADER ================= */}
       {/* Hidden on mobile, shown on desktop. Static flow (no height collapse to prevent layout shifts/jitter) */}
-      <div className="hidden lg:block bg-cream-dark/45 border-b border-gold/15 px-4 sm:px-6 lg:px-8 overflow-visible relative z-50 bg-cream">
-        <div className="max-w-7xl mx-auto flex justify-between items-center py-3.5">
+      <div className="hidden lg:block bg-cream-dark/45 border-b border-gold/15 px-4 sm:px-6 lg:px-4 xl:px-8 overflow-visible relative z-50 bg-cream">
+        <div className="max-w-[1400px] mx-auto flex justify-between items-center py-3.5">
           
           {/* Left Brand and Tagline aligned in a single row */}
           <div className="flex items-center gap-3">
@@ -59,6 +59,15 @@ export default function Header() {
               <Mail className="w-3.5 h-3.5 text-saffron" />
               <span className="truncate max-w-[200px] xl:max-w-none">{settings.email || "contact@neelmanikripalusatsang.org"}</span>
             </a>
+
+            {/* Donation CTA */}
+            <Link
+              href="/donation"
+              className="px-3 py-1.5 bg-saffron hover:bg-maroon text-white rounded-full font-bold font-serif uppercase tracking-widest text-[10px] shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-1.5 border border-saffron-light/10"
+            >
+              <Heart className="w-3 h-3 fill-current" />
+              <span>{t("donation")}</span>
+            </Link>
 
             {/* Language Switcher */}
             <div className="border-l border-gold/25 pl-4">

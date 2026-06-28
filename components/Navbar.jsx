@@ -50,6 +50,9 @@ export default function Navbar({ isScrolled: parentIsScrolled }) {
     { name: t("gallery"), path: "/gallery" },
     { name: t("announcements"), path: "/announcements" },
     { name: t("blog"), path: "/blog" },
+    { name: t("library"), path: "/library" },
+    { name: t("lost_found"), path: "/lost-found" },
+    { name: t("festivals"), path: "/festivals" },
     { name: t("contact"), path: "/contact" }
   ];
 
@@ -78,51 +81,50 @@ export default function Navbar({ isScrolled: parentIsScrolled }) {
 
       {/* ================= MAIN NAVBAR (Sticky at the top for desktop & mobile navbar) ================= */}
       <nav
-        className={`w-full z-40 transition-all duration-300 sticky top-0 ${
-          isSticky
+        className={`w-full z-40 transition-all duration-300 sticky top-0 ${isSticky
             ? "bg-cream/95 backdrop-blur-md shadow-md border-b border-gold/20 py-2 sm:py-3"
             : "bg-cream border-b border-gold/10 py-2 sm:py-3"
-        }`}
+          }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-4 xl:px-8">
           <div className="flex items-center justify-between">
-            
+
             {/* ================= DESKTOP VIEW ================= */}
             {/* Desktop Brand (shows only when navbar is scrolled/sticky, otherwise top header has it) */}
-            <div className={`hidden lg:flex items-center space-x-1.5 transition-all duration-300 ${isSticky ? "opacity-100 translate-x-0 w-auto" : "opacity-0 -translate-x-4 w-0 overflow-hidden"}`}>
-              <Link href="/" className="flex items-center space-x-1 group flex-shrink-0">
-                {settings.logoUrl ? (
-                  <img src={settings.logoUrl} alt="Logo" className="w-6 h-6 object-contain rounded-full flex-shrink-0" />
-                ) : (
-                  <Flame className="w-4 h-4 text-saffron fill-current flex-shrink-0" />
-                )}
-                <span className="font-serif text-xs xl:text-sm font-black tracking-tight text-maroon group-hover:text-saffron transition-colors whitespace-nowrap">
-                  {settings.organizationName || t("title")}
-                </span>
-              </Link>
-            </div>
+            {isSticky && (
+              <div className="hidden lg:flex items-center space-x-1.5 transition-all duration-300">
+                <Link href="/" className="flex items-center space-x-1 group flex-shrink-0">
+                  {settings.logoUrl ? (
+                    <img src={settings.logoUrl} alt="Logo" className="w-6 h-6 object-contain rounded-full flex-shrink-0" />
+                  ) : (
+                    <Flame className="w-4 h-4 text-saffron fill-current flex-shrink-0" />
+                  )}
+                  <span className="font-serif text-xs xl:text-sm font-black tracking-tight text-maroon group-hover:text-saffron transition-colors whitespace-nowrap">
+                    {settings.organizationName || t("title")}
+                  </span>
+                </Link>
+              </div>
+            )}
 
             {/* Desktop Links */}
-            <div className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 flex-grow justify-center flex-nowrap overflow-hidden">
+            <div className="hidden lg:flex items-center gap-x-1 xl:gap-x-2 flex-grow justify-center flex-nowrap">
               {navLinks.map((link) => {
                 const isActive = pathname === link.path;
                 return (
                   <Link
                     key={link.path}
                     href={link.path}
-                    className={`rounded-xl font-serif font-bold uppercase tracking-wider transition-all duration-300 relative whitespace-nowrap ${
-                      isSticky 
-                        ? "px-2 py-1.5 text-[10px] xl:text-xs" 
-                        : "px-3 py-2 text-[11px] xl:text-xs"
-                    } ${
-                      isActive
-                        ? "text-saffron bg-gold-light/20"
-                        : "text-dark-brown/85 hover:text-saffron hover:bg-cream-dark/30"
-                    }`}
+                    className={`rounded-xl font-serif font-bold uppercase tracking-wider transition-all duration-300 relative whitespace-nowrap ${isSticky
+                        ? "px-1.5 py-1 text-[9.5px] lg:text-[10px] xl:px-2.5 xl:py-1.5 xl:text-xs"
+                        : "px-2 py-1.5 text-[10px] lg:text-[11px] xl:px-3 xl:py-2 xl:text-xs"
+                      } ${isActive
+                        ? "text-saffron bg-saffron/10"
+                        : "text-dark-brown/85 hover:text-saffron hover:bg-saffron/5"
+                      }`}
                   >
                     {link.name}
                     {isActive && (
-                      <span className="absolute bottom-1 left-2 right-2 h-[1.5px] bg-saffron rounded-full" />
+                      <span className="absolute bottom-1 left-1.5 right-1.5 h-[1.5px] bg-saffron rounded-full" />
                     )}
                   </Link>
                 );
@@ -134,24 +136,12 @@ export default function Navbar({ isScrolled: parentIsScrolled }) {
               {/* Call CTA */}
               <a
                 href={`tel:${settings.phone || "+919876543210"}`}
-                className={`border border-gold/45 hover:border-saffron rounded-full font-bold font-serif uppercase tracking-widest transition-all duration-300 flex items-center gap-1 bg-white shadow-sm btn-water-outline-maroon ${
-                  isSticky ? "px-3 py-1.5 text-[9px] xl:text-[10px]" : "px-4 py-2 text-xs"
-                }`}
+                className={`border border-gold/45 hover:border-saffron rounded-full font-bold font-serif uppercase tracking-widest transition-all duration-300 flex items-center gap-1 bg-white shadow-sm btn-water-outline-maroon ${isSticky ? "px-3 py-1.5 text-[9px] xl:text-[10px]" : "px-4 py-2 text-xs"
+                  }`}
               >
                 <Phone className="w-3.5 h-3.5 relative z-10" />
                 <span className="relative z-10">{t("call")}</span>
               </a>
-
-              {/* Donation CTA */}
-              <Link
-                href="/donation"
-                className={`rounded-full font-bold font-serif uppercase tracking-widest transition-all duration-300 shadow-sm hover:shadow-md flex items-center gap-1.5 border border-saffron-light/10 btn-water-saffron-maroon ${
-                  isSticky ? "px-3 py-1.5 text-[9px] xl:text-[10px]" : "px-4 py-2 text-xs"
-                }`}
-              >
-                <Heart className="w-3.5 h-3.5 fill-current relative z-10" />
-                <span className="relative z-10">{t("donation")}</span>
-              </Link>
             </div>
 
             {/* ================= MOBILE NAVBAR VIEW (Only the navbar row remains in the sticky context) ================= */}
@@ -196,17 +186,15 @@ export default function Navbar({ isScrolled: parentIsScrolled }) {
         {/* ================= MOBILE DRAWER (Right Slide-out Drawer) ================= */}
         {/* Background Overlay */}
         <div
-          className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity duration-300 ${
-            isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
+          className={`lg:hidden fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            }`}
           onClick={() => setIsOpen(false)}
         />
 
         {/* Slide-out Panel */}
         <div
-          className={`lg:hidden fixed inset-y-0 right-0 w-72 max-w-full bg-cream border-l border-gold/25 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${
-            isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`lg:hidden fixed inset-y-0 right-0 w-72 max-w-full bg-cream border-l border-gold/25 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           {/* Drawer Header */}
           <div className="p-4 border-b border-gold/15 flex items-center justify-between bg-cream-dark/25">
@@ -231,11 +219,10 @@ export default function Navbar({ isScrolled: parentIsScrolled }) {
                   key={link.path}
                   href={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-4 py-2.5 rounded-xl text-xs sm:text-sm font-serif font-bold uppercase tracking-wider transition-all ${
-                    isActive
+                  className={`block px-4 py-2.5 rounded-xl text-xs sm:text-sm font-serif font-bold uppercase tracking-wider transition-all ${isActive
                       ? "bg-gold-light/35 text-maroon border-l-4 border-saffron"
                       : "text-dark-brown/85 hover:bg-cream-dark/45 hover:text-saffron"
-                  }`}
+                    }`}
                 >
                   {link.name}
                 </Link>

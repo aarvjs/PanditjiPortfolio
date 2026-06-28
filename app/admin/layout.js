@@ -8,7 +8,7 @@ import Link from "next/link";
 import { 
   LayoutDashboard, Calendar, HeartHandshake, Image as ImageIcon, 
   Bell, Quote, BookOpen, UserCheck, ShieldAlert, LogOut, Menu, X,
-  Compass, Settings, Landmark, Mail, Users, Video
+  Compass, Settings, Landmark, Mail, Users, Video, MapPin
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -85,6 +85,10 @@ export default function AdminLayout({ children }) {
     { name: "Guru Ji Gallery", href: "/admin/gallery", icon: <ImageIcon className="w-4 h-4" /> },
     { name: "Guru Ji Photos", href: "/admin/guru-images", icon: <ImageIcon className="w-4 h-4" /> },
     { name: "YouTube Videos", href: "/admin/guru-videos", icon: <Video className="w-4 h-4" /> },
+    { name: "E-Library", href: "/admin/e-library", icon: <BookOpen className="w-4 h-4" /> },
+    { name: "Ashram Locator", href: "/admin/ashrams", icon: <MapPin className="w-4 h-4" /> },
+    { name: "Lost & Found", href: "/admin/lost-found", icon: <ShieldAlert className="w-4 h-4" /> },
+    { name: "Festival Passes", href: "/admin/festivals", icon: <Calendar className="w-4 h-4" /> },
     { name: "Announcements", href: "/admin/announcements", icon: <Bell className="w-4 h-4" /> },
     { name: "Daily Quotes", href: "/admin/quotes", icon: <Quote className="w-4 h-4" /> },
     { name: "Teachings & Blogs", href: "/admin/blogs", icon: <BookOpen className="w-4 h-4" /> },
