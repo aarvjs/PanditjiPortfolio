@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Calendar, MapPin, ArrowRight, UserCheck } from "lucide-react";
 import { getFestivals } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Spiritual Festivals & Mahotsav | Neelmani Kripalu Satsang",
   description: "Join our grand spiritual celebrations including Janmashtami, Guru Purnima, Holi, and Diwali. Register online and get your entry passes."

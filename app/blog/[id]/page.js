@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import PageHero from "../../../components/PageHero";
+import ImageWithFallback from "../../../components/ImageWithFallback";
 import { getBlogById } from "../../../lib/db";
 import { User, Calendar, BookOpen, ChevronLeft, Share2 } from "lucide-react";
 
@@ -64,13 +65,11 @@ export default async function BlogDetailPage({ params }) {
           <article className="bg-white/70 border border-gold/15 p-6 md:p-10 rounded-3xl shadow-sm space-y-6">
             {/* Banner Image */}
             <div className="rounded-2xl overflow-hidden aspect-video max-h-[380px] bg-gold-light/20 border border-gold/10">
-              <img
+              <ImageWithFallback
                 src={blog.bannerUrl}
+                fallbackSrc="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80"
                 alt={blog.title}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80";
-                }}
               />
             </div>
 

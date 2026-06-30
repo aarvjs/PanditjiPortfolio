@@ -32,21 +32,13 @@ export default function AdminBlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchBlogs();
-  }, []);
-
-  const fetchBlogs = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getBlogs();
+    const unsubscribe = db.subscribeToBlogs((data) => {
       setBlogs(data);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch blog posts.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -111,9 +103,8 @@ export default function AdminBlogsPage() {
       }
 
       resetForm();
-      await fetchBlogs();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving blog post:", err);
       showFeedback("error", err.message || "Failed to save blog post.");
     } finally {
       setIsLoading(false);
@@ -141,6 +132,7 @@ export default function AdminBlogsPage() {
   const handleDeleteClick = async (blog) => {
     if (!confirm(`Are you sure you want to delete blog "${blog.title}"?`)) return;
     setIsLoading(true);
+    showFeedback("info", "Deleting blog post...");
     try {
       // 1. Delete image file from Storage
       const storagePath = blog.coverImageStoragePath || blog.bannerImageStoragePath;
@@ -150,10 +142,10 @@ export default function AdminBlogsPage() {
       // 2. Delete document from Firestore
       await db.deleteBlog(blog.id);
       showFeedback("success", "Blog deleted successfully!");
-      await fetchBlogs();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting blog post:", err);
       showFeedback("error", "Failed to delete blog post.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -492,7 +484,7 @@ export default function AdminBlogsPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
               >
-                {uploading ? "Uploading cover..." : isLoading ? "Saving article..." : "Publish Article"}
+                {uploading ? "Uploading cover..." : isLoading ? (view === "edit" ? "Updating Article..." : "Publishing Article...") : (view === "edit" ? "Update Article" : "Publish Article")}
               </button>
             </div>
           </form>

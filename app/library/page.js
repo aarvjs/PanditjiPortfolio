@@ -5,6 +5,8 @@ import PageHero from "../../components/PageHero";
 import LibraryBrowse from "../../components/LibraryBrowse";
 import { getELibraryResources } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Spiritual E-Library & Holy PDFs | Neelmani Kripalu Satsang",
   description: "Browse and download spiritual books, eBooks, magazines, bhajans, and teachings composed by Jagadguru Shri Kripalu Ji Maharaj."

@@ -2,6 +2,8 @@ import React from "react";
 import DonationPage from "../../components/DonationPage";
 import { getCampaigns } from "../../lib/db";
 
+export const revalidate = 0;
+
 // SEO Friendly Metadata for Donation Page
 export const metadata = {
   title: "Donation Seva & Contributions | Neelmani Kripalu Satsang",

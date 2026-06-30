@@ -26,13 +26,8 @@ export default function SiteSettingsPage() {
   const [toast, setToast] = useState({ message: "", type: "success" });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getSiteSettings();
+    const unsubscribe = db.subscribeToSiteSettings((data) => {
       if (data) {
         setForm({
           organizationName: data.organizationName || "",
@@ -50,13 +45,10 @@ export default function SiteSettingsPage() {
           logoUrl: data.logoUrl || ""
         });
       }
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch site settings.", "error");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });

@@ -46,23 +46,32 @@ export default function LostFoundPage() {
   const [isLoadingReports, setIsLoadingReports] = useState(true);
 
   useEffect(() => {
-    fetchUnresolvedReports();
-  }, []);
-
-  const fetchUnresolvedReports = async () => {
     setIsLoadingReports(true);
-    try {
-      const lost = await db.getLostItems();
-      const missing = await db.getMissingPersons();
-      // Show unresolved reports
+    let lostLoaded = false;
+    let missingLoaded = false;
+    
+    const unsubscribeLost = db.subscribeToLostItems((lost) => {
       setLostItems((lost || []).filter(item => item.status === "unresolved"));
+      lostLoaded = true;
+      if (lostLoaded && missingLoaded) setIsLoadingReports(false);
+    });
+
+    const unsubscribeMissing = db.subscribeToMissingPersons((missing) => {
       setMissingPersons((missing || []).filter(p => p.status === "unresolved"));
-    } catch (err) {
-      console.error(err);
-    } finally {
+      missingLoaded = true;
+      if (lostLoaded && missingLoaded) setIsLoadingReports(false);
+    });
+
+    // Fallback if not configured (sets loading false immediately)
+    if (!db.isFirebaseConfigured) {
       setIsLoadingReports(false);
     }
-  };
+
+    return () => {
+      unsubscribeLost && unsubscribeLost();
+      unsubscribeMissing && unsubscribeMissing();
+    };
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });

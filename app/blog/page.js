@@ -5,6 +5,8 @@ import PageHero from "../../components/PageHero";
 import BlogListing from "../../components/BlogListing";
 import { getBlogs } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Spiritual Teachings & Articles | Neelmani Kripalu Satsang",
   description: "Read divine discourses, scriptural teachings, explanations of Bhakti Yoga, Roopdhyana, and latest reports of our Seva campaigns."

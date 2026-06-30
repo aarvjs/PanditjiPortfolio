@@ -5,6 +5,8 @@ import PageHero from "../../components/PageHero";
 import GalleryGrid from "../../components/GalleryGrid";
 import { getGalleryItems } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Divine Gallery | Neelmani Kripalu Satsang",
   description: "Browse high-definition photos and videos of our guru satsangs, devotional kirtans, Janmashtami celebrations, and active charity seva work."

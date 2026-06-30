@@ -13,20 +13,17 @@ export default function AdminVolunteersPage() {
   const [filterInterest, setFilterInterest] = useState("all");
 
   useEffect(() => {
-    fetchVolunteers();
+    setIsLoading(true);
+    const unsubscribe = db.subscribeToVolunteerRegistrations((data) => {
+      setVolunteers(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchVolunteers = async () => {
+  const fetchVolunteers = () => {
     setIsLoading(true);
-    try {
-      const data = await db.getVolunteerRegistrations();
-      setVolunteers(data);
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch volunteer applications.", "error");
-    } finally {
-      setIsLoading(false);
-    }
+    setTimeout(() => setIsLoading(false), 300);
   };
 
   const showToast = (message, type = "success") => {
@@ -36,13 +33,14 @@ export default function AdminVolunteersPage() {
   const handleDeleteClick = async (vol) => {
     if (!confirm(`Are you sure you want to delete the volunteer application of "${vol.name}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting application...", "info");
     try {
       await db.deleteVolunteerRegistration(vol.id);
       showToast("Volunteer application deleted successfully!", "success");
-      await fetchVolunteers();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting volunteer registration:", err);
       showToast("Failed to delete volunteer application.", "error");
+    } finally {
       setIsLoading(false);
     }
   };

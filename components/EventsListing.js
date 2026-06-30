@@ -1,17 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import EventCard from "./EventCard";
 import { Search, CalendarDays, Filter } from "lucide-react";
+import { subscribeToEvents } from "../lib/db";
 
 export default function EventsListing({ initialEvents = [] }) {
+  const [events, setEvents] = useState(initialEvents);
   const [timeFilter, setTimeFilter] = useState("upcoming"); // 'all' | 'upcoming' | 'past'
   const [typeFilter, setTypeFilter] = useState("all"); // 'all' | 'online' | 'offline'
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    const unsubscribe = subscribeToEvents((data) => {
+      setEvents(data);
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
+
   const nowStr = new Date().toISOString().split("T")[0];
 
-  const filteredEvents = initialEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     // 1. Time Filter
     if (timeFilter === "upcoming") {
       if (event.date < nowStr) return false;

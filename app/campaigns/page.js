@@ -7,6 +7,8 @@ import CampaignCard from "../../components/CampaignCard";
 import { getCampaigns } from "../../lib/db";
 import { HeartHandshake } from "lucide-react";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Holy Seva Campaigns | Neelmani Kripalu Satsang",
   description: "Explore our active Seva campaigns: Annadan food distribution, temple maintenance, rural children education support. Find how to participate as a volunteer."

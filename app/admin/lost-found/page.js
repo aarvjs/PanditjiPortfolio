@@ -22,23 +22,31 @@ export default function AdminLostFoundPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
     setIsLoading(true);
-    try {
-      const lost = await db.getLostItems();
-      const missing = await db.getMissingPersons();
-      setLostItems(lost || []);
-      setMissingPersons(missing || []);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch reports.");
-    } finally {
+    let lostLoaded = false;
+    let missingLoaded = false;
+
+    const unsubscribeLost = db.subscribeToLostItems((data) => {
+      setLostItems(data || []);
+      lostLoaded = true;
+      if (lostLoaded && missingLoaded) setIsLoading(false);
+    });
+
+    const unsubscribeMissing = db.subscribeToMissingPersons((data) => {
+      setMissingPersons(data || []);
+      missingLoaded = true;
+      if (lostLoaded && missingLoaded) setIsLoading(false);
+    });
+
+    if (!db.isFirebaseConfigured) {
       setIsLoading(false);
     }
-  };
+
+    return () => {
+      unsubscribeLost && unsubscribeLost();
+      unsubscribeMissing && unsubscribeMissing();
+    };
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -47,6 +55,7 @@ export default function AdminLostFoundPage() {
 
   const handleToggleStatus = async (item, type) => {
     setIsLoading(true);
+    showFeedback("info", "Updating report status...");
     try {
       const nextStatus = item.status === "resolved" ? "unresolved" : "resolved";
       
@@ -57,10 +66,10 @@ export default function AdminLostFoundPage() {
         await db.updateMissingPerson(item.id, { status: nextStatus });
         showFeedback("success", `Missing alert for "${item.missingPersonName}" status marked as ${nextStatus}.`);
       }
-      await fetchReports();
     } catch (err) {
-      console.error(err);
+      console.error("Error toggling status:", err);
       showFeedback("error", "Failed to update report status.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -74,6 +83,7 @@ export default function AdminLostFoundPage() {
     if (!deletingId) return;
     setIsLoading(true);
     setShowDeleteModal(false);
+    showFeedback("info", "Deleting report...");
     try {
       if (activeTab === "lost") {
         await db.deleteLostItem(deletingId);
@@ -81,9 +91,8 @@ export default function AdminLostFoundPage() {
         await db.deleteMissingPerson(deletingId);
       }
       showFeedback("success", "Report deleted successfully.");
-      await fetchReports();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting report:", err);
       showFeedback("error", "Failed to delete report.");
     } finally {
       setIsLoading(false);

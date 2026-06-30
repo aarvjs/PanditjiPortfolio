@@ -41,21 +41,13 @@ export default function AdminEventsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getEvents();
+    const unsubscribe = db.subscribeToEvents((data) => {
       setEvents(data);
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch events from Firestore.", "error");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -132,9 +124,8 @@ export default function AdminEventsPage() {
       }
 
       resetForm();
-      await fetchEvents();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving event:", err);
       showToast(err.message || "Failed to save event.", "error");
     } finally {
       setIsLoading(false);
@@ -170,16 +161,17 @@ export default function AdminEventsPage() {
   const handleDeleteClick = async (event) => {
     if (!confirm(`Are you sure you want to delete event "${event.title}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting event...", "info");
     try {
       if (event.bannerImageStoragePath) {
         await deleteImage(event.bannerImageStoragePath);
       }
       await db.deleteEvent(event.id);
       showToast("Event deleted successfully!", "success");
-      await fetchEvents();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting event:", err);
       showToast("Failed to delete event.", "error");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -678,7 +670,7 @@ export default function AdminEventsPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {uploading ? "Saving Event Banner..." : view === "edit" ? "Update Event" : "Create Event"}
+                {isLoading ? (view === "edit" ? "Updating Event..." : "Creating Event...") : (uploading ? "Saving Event Banner..." : view === "edit" ? "Update Event" : "Create Event")}
               </button>
             </div>
           </form>

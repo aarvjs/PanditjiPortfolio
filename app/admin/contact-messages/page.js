@@ -13,20 +13,17 @@ export default function ContactMessagesPage() {
   const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'new' | 'read'
 
   useEffect(() => {
-    fetchMessages();
+    setIsLoading(true);
+    const unsubscribe = db.subscribeToContactSubmissions((data) => {
+      setMessages(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe && unsubscribe();
   }, []);
 
-  const fetchMessages = async () => {
+  const fetchMessages = () => {
     setIsLoading(true);
-    try {
-      const data = await db.getContactSubmissions();
-      setMessages(data);
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch contact messages.", "error");
-    } finally {
-      setIsLoading(false);
-    }
+    setTimeout(() => setIsLoading(false), 300);
   };
 
   const showToast = (message, type = "success") => {
@@ -36,12 +33,9 @@ export default function ContactMessagesPage() {
   const markAsRead = async (id) => {
     try {
       await db.updateContactMessageStatus(id, "read");
-      setMessages(prev => 
-        prev.map(m => m.id === id ? { ...m, status: "read" } : m)
-      );
       showToast("Message marked as read.", "success");
     } catch (err) {
-      console.error(err);
+      console.error("Error marking message as read:", err);
       showToast("Failed to update message status.", "error");
     }
   };
@@ -49,13 +43,14 @@ export default function ContactMessagesPage() {
   const handleDeleteClick = async (msg) => {
     if (!confirm(`Are you sure you want to delete the enquiry from "${msg.name}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting message...", "info");
     try {
       await db.deleteContactSubmission(msg.id);
       showToast("Message deleted successfully!", "success");
-      await fetchMessages();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting contact submission:", err);
       showToast("Failed to delete message.", "error");
+    } finally {
       setIsLoading(false);
     }
   };

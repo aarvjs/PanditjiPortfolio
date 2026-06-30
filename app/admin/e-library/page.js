@@ -53,21 +53,13 @@ export default function AdminELibraryPage() {
   ];
 
   useEffect(() => {
-    fetchResources();
-  }, []);
-
-  const fetchResources = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getELibraryResources();
+    const unsubscribe = db.subscribeToELibraryResources((data) => {
       setResources(data || []);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch resources.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -180,9 +172,8 @@ export default function AdminELibraryPage() {
 
       resetForm();
       setView("list");
-      await fetchResources();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving library resource:", err);
       showFeedback("error", err.message || "Failed to save resource.");
     } finally {
       setIsUploading(false);
@@ -221,12 +212,12 @@ export default function AdminELibraryPage() {
     if (!deletingId) return;
     setIsLoading(true);
     setShowDeleteModal(false);
+    showFeedback("info", "Deleting resource...");
     try {
       await db.deleteELibraryResource(deletingId);
       showFeedback("success", "Resource deleted successfully.");
-      await fetchResources();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting library resource:", err);
       showFeedback("error", "Failed to delete resource.");
     } finally {
       setIsLoading(false);

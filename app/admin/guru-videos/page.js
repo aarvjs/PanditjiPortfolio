@@ -23,22 +23,14 @@ export default function AdminGuruVideosPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
-
-  const fetchVideos = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getGuruJiVideos();
+    const unsubscribe = db.subscribeToGuruJiVideos((data) => {
       const sorted = [...data].sort((a, b) => (a.order || 0) - (b.order || 0));
       setVideos(sorted);
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch videos from Firestore.", "error");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -94,10 +86,10 @@ export default function AdminGuruVideosPage() {
       }
 
       resetForm();
-      await fetchVideos();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving video:", err);
       showToast(err.message || "Failed to save video.", "error");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -117,13 +109,14 @@ export default function AdminGuruVideosPage() {
   const handleDeleteClick = async (video) => {
     if (!confirm(`Are you sure you want to delete video "${video.title}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting video...", "info");
     try {
       await db.deleteGuruJiVideo(video.id);
       showToast("Video deleted successfully!", "success");
-      await fetchVideos();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting video:", err);
       showToast("Failed to delete video.", "error");
+    } finally {
       setIsLoading(false);
     }
   };

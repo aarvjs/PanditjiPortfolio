@@ -1,19 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Search, Filter, BookOpen, Grid, List, Globe, 
   ArrowRight, Download, MessageSquare, Star, ArrowLeft
 } from "lucide-react";
+import { subscribeToELibraryResources } from "../lib/db";
 
 export default function LibraryBrowse({ initialResources = [] }) {
+  const [resources, setResources] = useState(initialResources);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLanguage, setSelectedLanguage] = useState("All");
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToELibraryResources((data) => {
+      setResources((data || []).filter(res => res.status === "published"));
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const categories = [
     "All",
@@ -26,10 +35,10 @@ export default function LibraryBrowse({ initialResources = [] }) {
   ];
 
   // Extract featured items
-  const featuredResources = initialResources.filter(res => res.featured);
+  const featuredResources = resources.filter(res => res.featured);
 
   // Filter items
-  const filtered = initialResources.filter(res => {
+  const filtered = resources.filter(res => {
     const matchesSearch = 
       res.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       res.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||

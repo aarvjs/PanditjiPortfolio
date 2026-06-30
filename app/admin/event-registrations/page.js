@@ -14,24 +14,35 @@ export default function AdminEventRegistrationsPage() {
   const [filterEvent, setFilterEvent] = useState("all");
 
   useEffect(() => {
-    fetchRegistrationsAndEvents();
-  }, []);
-
-  const fetchRegistrationsAndEvents = async () => {
     setIsLoading(true);
-    try {
-      const [regsData, eventsData] = await Promise.all([
-        db.getEventRegistrations(),
-        db.getEvents()
-      ]);
+    let regsLoaded = false;
+    let eventsLoaded = false;
+
+    const unsubscribeRegs = db.subscribeToEventRegistrations((regsData) => {
       setRegistrations(regsData);
+      regsLoaded = true;
+      if (regsLoaded && eventsLoaded) setIsLoading(false);
+    });
+
+    const unsubscribeEvents = db.subscribeToEvents((eventsData) => {
       setEvents(eventsData);
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch event bookings.", "error");
-    } finally {
+      eventsLoaded = true;
+      if (regsLoaded && eventsLoaded) setIsLoading(false);
+    });
+
+    if (!db.isFirebaseConfigured) {
       setIsLoading(false);
     }
+
+    return () => {
+      unsubscribeRegs && unsubscribeRegs();
+      unsubscribeEvents && unsubscribeEvents();
+    };
+  }, []);
+
+  const fetchRegistrationsAndEvents = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 300);
   };
 
   const showToast = (message, type = "success") => {
@@ -41,13 +52,14 @@ export default function AdminEventRegistrationsPage() {
   const handleDeleteClick = async (reg) => {
     if (!confirm(`Are you sure you want to delete the seat booking of "${reg.name}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting booking...", "info");
     try {
       await db.deleteEventRegistration(reg.id);
       showToast("Booking deleted successfully!", "success");
-      await fetchRegistrationsAndEvents();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting event registration:", err);
       showToast("Failed to delete booking.", "error");
+    } finally {
       setIsLoading(false);
     }
   };

@@ -1,17 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon, Video } from "lucide-react";
+import { subscribeToGalleryItems } from "../lib/db";
 
 export default function GalleryGrid({ items }) {
+  const [liveItems, setLiveItems] = useState(items);
   const [activeTab, setActiveTab] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToGalleryItems((data) => {
+      setLiveItems(data.sort((a, b) => (a.order || 0) - (b.order || 0)));
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const categories = ["All", "Satsang Events", "Charity Activities", "Festivals", "Campaign Work"];
 
   const filteredItems = activeTab === "All"
-    ? items
-    : items.filter(item => item.category.toLowerCase() === activeTab.toLowerCase());
+    ? liveItems
+    : liveItems.filter(item => item.category.toLowerCase() === activeTab.toLowerCase());
 
   const handleOpenLightbox = (index) => {
     setLightboxIndex(index);

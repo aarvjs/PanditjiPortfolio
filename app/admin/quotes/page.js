@@ -24,21 +24,13 @@ export default function AdminQuotesPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchQuotes();
-  }, []);
-
-  const fetchQuotes = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getQuotes();
+    const unsubscribe = db.subscribeToQuotes((data) => {
       setQuotes(data);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch quotes.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -69,10 +61,10 @@ export default function AdminQuotesPage() {
       }
 
       resetForm();
-      await fetchQuotes();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving quote:", err);
       showFeedback("error", err.message || "Failed to save quote.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -91,13 +83,14 @@ export default function AdminQuotesPage() {
   const handleDeleteClick = async (quoteItem) => {
     if (!confirm(`Are you sure you want to delete this quote?`)) return;
     setIsLoading(true);
+    showFeedback("info", "Deleting quote...");
     try {
       await db.deleteQuote(quoteItem.id);
       showFeedback("success", "Quote deleted successfully!");
-      await fetchQuotes();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting quote:", err);
       showFeedback("error", "Failed to delete quote.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -336,7 +329,7 @@ export default function AdminQuotesPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
               >
-                <span>Save Quote</span>
+                <span>{isLoading ? "Saving..." : (view === "create" ? "Add Quote" : "Save Changes")}</span>
               </button>
             </div>
           </form>

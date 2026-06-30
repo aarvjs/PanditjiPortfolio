@@ -1,5 +1,7 @@
 import React from "react";
 import Link from "next/link";
+
+export const revalidate = 0;
 import Header from "../components/Header";
 import HomeHero from "../components/HomeHero";
 import GuruGallery from "../components/GuruGallery";

@@ -42,23 +42,31 @@ export default function AdminFestivalsPage() {
   const [deleteType, setDeleteType] = useState("festival"); // 'festival' | 'registration'
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
     setIsLoading(true);
-    try {
-      const fests = await db.getFestivals();
-      const regs = await db.getFestivalRegistrations();
+    let festsLoaded = false;
+    let regsLoaded = false;
+
+    const unsubscribeFests = db.subscribeToFestivals((fests) => {
       setFestivals(fests || []);
+      festsLoaded = true;
+      if (festsLoaded && regsLoaded) setIsLoading(false);
+    });
+
+    const unsubscribeRegs = db.subscribeToFestivalRegistrations((regs) => {
       setRegistrations(regs || []);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch festival data.");
-    } finally {
+      regsLoaded = true;
+      if (festsLoaded && regsLoaded) setIsLoading(false);
+    });
+
+    if (!db.isFirebaseConfigured) {
       setIsLoading(false);
     }
-  };
+
+    return () => {
+      unsubscribeFests && unsubscribeFests();
+      unsubscribeRegs && unsubscribeRegs();
+    };
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -139,9 +147,8 @@ export default function AdminFestivalsPage() {
 
       resetForm();
       setView("list");
-      await fetchData();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving festival:", err);
       showFeedback("error", "Failed to save festival details.");
     } finally {
       setIsUploading(false);
@@ -183,9 +190,8 @@ export default function AdminFestivalsPage() {
         await db.deleteFestivalRegistration(deletingId);
         showFeedback("success", "Registration record removed.");
       }
-      await fetchData();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting festival record:", err);
       showFeedback("error", "Failed to delete record.");
     } finally {
       setIsLoading(false);

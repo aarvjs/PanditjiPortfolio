@@ -31,21 +31,13 @@ export default function AdminGuruImagesPage() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    fetchImages();
-  }, []);
-
-  const fetchImages = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getGuruJiImages();
+    const unsubscribe = db.subscribeToGuruJiImages((data) => {
       setItems(data.sort((a, b) => (a.order || 0) - (b.order || 0)));
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch Guru Ji photos.", "error");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -127,9 +119,8 @@ export default function AdminGuruImagesPage() {
       }
 
       resetForm();
-      await fetchImages();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving photo:", err);
       showToast(err.message || "Failed to save photo.", "error");
     } finally {
       setIsLoading(false);
@@ -140,16 +131,17 @@ export default function AdminGuruImagesPage() {
   const handleDeleteClick = async (item) => {
     if (!confirm(`Are you sure you want to delete "${item.title}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting photo...", "info");
     try {
       if (item.imageStoragePath) {
         await deleteImage(item.imageStoragePath);
       }
       await db.deleteGuruJiImage(item.id);
       showToast("Guru Ji photo deleted successfully!", "success");
-      await fetchImages();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting photo:", err);
       showToast("Failed to delete photo.", "error");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -476,7 +468,7 @@ export default function AdminGuruImagesPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {uploading ? "Saving Photo..." : view === "edit" ? "Update Photo" : "Add Photo"}
+                {isLoading ? (view === "edit" ? "Updating Photo..." : "Adding Photo...") : (uploading ? "Saving Photo..." : view === "edit" ? "Update Photo" : "Add Photo")}
               </button>
             </div>
           </form>

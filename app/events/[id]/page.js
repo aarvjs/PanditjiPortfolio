@@ -4,6 +4,7 @@ import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import PageHero from "../../../components/PageHero";
 import EventRegistrationForm from "../../../components/EventRegistrationForm";
+import ImageWithFallback from "../../../components/ImageWithFallback";
 import { getEventById } from "../../../lib/db";
 import { Calendar, Clock, MapPin, Phone, User, Globe, ChevronLeft, DollarSign } from "lucide-react";
 
@@ -73,13 +74,11 @@ export default async function EventDetailPage({ params }) {
             <div className="lg:col-span-8 space-y-6">
               {/* Event Image Banner */}
               <div className="rounded-3xl overflow-hidden aspect-video bg-gold-light/20 border border-gold/15 relative shadow-md">
-                <img
+                <ImageWithFallback
                   src={event.bannerUrl}
+                  fallbackSrc="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80"
                   alt={event.title}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80";
-                  }}
                 />
                 
                 {/* Floating Indicators */}

@@ -1,17 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BlogCard from "./BlogCard";
 import { Search, Filter, BookOpen } from "lucide-react";
+import { subscribeToBlogs } from "../lib/db";
 
 export default function BlogListing({ initialBlogs = [] }) {
+  const [blogs, setBlogs] = useState(initialBlogs);
   const [selectedCategory, setSelectedCategory] = useState("all"); // 'all' | 'teachings' | 'sadhana' | 'seva'
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Extract unique categories in title case, sort
-  const categories = ["all", ...new Set(initialBlogs.map(b => b.category.toLowerCase()))];
+  useEffect(() => {
+    const unsubscribe = subscribeToBlogs((data) => {
+      setBlogs(data);
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
-  const filteredBlogs = initialBlogs.filter((blog) => {
+  // Extract unique categories in title case, sort
+  const categories = ["all", ...new Set(blogs.map(b => b.category.toLowerCase()))];
+
+  const filteredBlogs = blogs.filter((blog) => {
     // 1. Category Filter
     if (selectedCategory !== "all") {
       if (blog.category.toLowerCase() !== selectedCategory.toLowerCase()) return false;

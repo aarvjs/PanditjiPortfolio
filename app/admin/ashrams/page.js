@@ -36,21 +36,13 @@ export default function AdminAshramsPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    fetchAshrams();
-  }, []);
-
-  const fetchAshrams = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getAshrams();
+    const unsubscribe = db.subscribeToAshrams((data) => {
       setAshrams(data || []);
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch ashrams.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -124,9 +116,8 @@ export default function AdminAshramsPage() {
 
       resetForm();
       setView("list");
-      await fetchAshrams();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving center:", err);
       showFeedback("error", "Failed to save center details.");
     } finally {
       setIsUploading(false);
@@ -160,12 +151,12 @@ export default function AdminAshramsPage() {
     if (!deletingId) return;
     setIsLoading(true);
     setShowDeleteModal(false);
+    showFeedback("info", "Deleting center...");
     try {
       await db.deleteAshram(deletingId);
       showFeedback("success", "Center deleted successfully.");
-      await fetchAshrams();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting center:", err);
       showFeedback("error", "Failed to delete center.");
     } finally {
       setIsLoading(false);

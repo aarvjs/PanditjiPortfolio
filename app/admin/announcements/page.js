@@ -25,22 +25,13 @@ export default function AdminAnnouncementsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  const fetchAnnouncements = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getAnnouncements();
-      // Sort by publishDate desc
-      setAnnouncements(data.sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate)));
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch announcements.");
-    } finally {
+    const unsubscribe = db.subscribeToAnnouncements((data) => {
+      setAnnouncements((data || []).sort((a, b) => new Date(b.publishDate) - new Date(a.publishDate)));
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -55,14 +46,15 @@ export default function AdminAnnouncementsPage() {
 
   const toggleActiveStatus = async (announcement) => {
     setIsLoading(true);
+    showFeedback("info", "Updating status...");
     try {
       const updatedStatus = !announcement.active;
       await db.updateAnnouncement(announcement.id, { active: updatedStatus });
       showFeedback("success", `Notice marked as ${updatedStatus ? "active" : "inactive"}.`);
-      await fetchAnnouncements();
     } catch (err) {
-      console.error(err);
+      console.error("Error updating announcement status:", err);
       showFeedback("error", "Failed to update notice status.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -86,10 +78,10 @@ export default function AdminAnnouncementsPage() {
       }
 
       resetForm();
-      await fetchAnnouncements();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving announcement:", err);
       showFeedback("error", err.message || "Failed to save notice.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -109,13 +101,14 @@ export default function AdminAnnouncementsPage() {
   const handleDeleteClick = async (announcement) => {
     if (!confirm(`Are you sure you want to delete notice "${announcement.title}"?`)) return;
     setIsLoading(true);
+    showFeedback("info", "Deleting notice...");
     try {
       await db.deleteAnnouncement(announcement.id);
       showFeedback("success", "Notice deleted successfully!");
-      await fetchAnnouncements();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting announcement:", err);
       showFeedback("error", "Failed to delete notice.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -383,7 +376,7 @@ export default function AdminAnnouncementsPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
               >
-                <span>{view === "create" ? "Publish Notice" : "Save Changes"}</span>
+                <span>{isLoading ? "Saving..." : (view === "create" ? "Publish Notice" : "Save Changes")}</span>
               </button>
             </div>
           </form>

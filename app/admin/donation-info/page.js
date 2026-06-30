@@ -25,13 +25,8 @@ export default function DonationInfoPage() {
   const [imagePreview, setImagePreview] = useState("");
 
   useEffect(() => {
-    fetchInfo();
-  }, []);
-
-  const fetchInfo = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getDonationInfo();
+    const unsubscribe = db.subscribeToDonationInfo((data) => {
       if (data) {
         setForm({
           upiId: data.upiId || "",
@@ -46,13 +41,10 @@ export default function DonationInfoPage() {
         });
         setImagePreview(data.qrImageUrl || "");
       }
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch donation info.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });

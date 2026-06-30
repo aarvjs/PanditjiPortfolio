@@ -6,7 +6,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import PageHero from "./PageHero";
 import SectionHeading from "./SectionHeading";
-import { getDonationInfo } from "../lib/db";
+import { getDonationInfo, subscribeToDonationInfo } from "../lib/db";
 import { useSiteSettings } from "../context/SiteSettingsContext";
 import { 
   Heart, 
@@ -42,17 +42,12 @@ export default function DonationPage({ campaigns = [] }) {
   };
 
   useEffect(() => {
-    const fetchDonation = async () => {
-      try {
-        const info = await getDonationInfo();
-        if (info && Object.keys(info).length > 0) {
-          setDonationInfo(info);
-        }
-      } catch (err) {
-        console.error("Failed to load donation info:", err);
+    const unsubscribe = subscribeToDonationInfo((info) => {
+      if (info && Object.keys(info).length > 0) {
+        setDonationInfo(info);
       }
-    };
-    fetchDonation();
+    });
+    return () => unsubscribe && unsubscribe();
   }, []);
 
   const activeBankDetails = {

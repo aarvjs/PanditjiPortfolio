@@ -34,22 +34,13 @@ export default function AdminSevaPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
-  const fetchCampaigns = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getCampaigns();
-      // Sort by order asc
+    const unsubscribe = db.subscribeToCampaigns((data) => {
       setCampaigns(data.sort((a, b) => (a.order || 0) - (b.order || 0)));
-    } catch (err) {
-      console.error(err);
-      showFeedback("error", "Failed to fetch campaigns from Firestore.");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -115,9 +106,8 @@ export default function AdminSevaPage() {
       }
 
       resetForm();
-      await fetchCampaigns();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving campaign:", err);
       showFeedback("error", err.message || "Failed to save campaign.");
     } finally {
       setIsLoading(false);
@@ -147,6 +137,7 @@ export default function AdminSevaPage() {
   const handleDeleteClick = async (campaign) => {
     if (!confirm(`Are you sure you want to delete campaign "${campaign.title}"?`)) return;
     setIsLoading(true);
+    showFeedback("info", "Deleting campaign...");
     try {
       // 1. Delete image file from Storage
       if (campaign.imageStoragePath) {
@@ -155,10 +146,10 @@ export default function AdminSevaPage() {
       // 2. Delete document from Firestore
       await db.deleteCampaign(campaign.id);
       showFeedback("success", "Seva Campaign deleted successfully!");
-      await fetchCampaigns();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting campaign:", err);
       showFeedback("error", "Failed to delete campaign.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -539,7 +530,7 @@ export default function AdminSevaPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50"
               >
-                {uploading ? "Uploading Image..." : isLoading ? "Saving Campaign..." : "Save Seva Campaign"}
+                {uploading ? "Uploading Image..." : isLoading ? (view === "edit" ? "Updating Campaign..." : "Creating Campaign...") : (view === "edit" ? "Update Campaign" : "Save Seva Campaign")}
               </button>
             </div>
           </form>

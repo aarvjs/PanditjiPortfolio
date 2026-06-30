@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import PageHero from "../../../components/PageHero";
+import ImageWithFallback from "../../../components/ImageWithFallback";
 import { getCampaignById } from "../../../lib/db";
 import { HeartHandshake, MapPin, ChevronLeft, CalendarCheck2, ArrowRight } from "lucide-react";
 
@@ -69,13 +70,11 @@ export default async function CampaignDetailPage({ params }) {
             <div className="lg:col-span-8 space-y-6">
               {/* Campaign Image */}
               <div className="rounded-3xl overflow-hidden aspect-video bg-gold-light/20 border border-gold/15 relative shadow-md">
-                <img
+                <ImageWithFallback
                   src={campaign.bannerUrl}
+                  fallbackSrc="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80"
                   alt={campaign.title}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80";
-                  }}
                 />
                 
                 {/* Floating Status Badge */}

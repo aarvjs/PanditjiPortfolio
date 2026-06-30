@@ -5,6 +5,8 @@ import PageHero from "../../components/PageHero";
 import AshramMap from "../../components/AshramMap";
 import { getAshrams } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Temples & Ashram Locator | Neelmani Kripalu Satsang",
   description: "Find temples, ashrams, and weekly satsang centers of Neelmani Kripalu Satsang on our interactive map. Get timings, contact info, and directions."

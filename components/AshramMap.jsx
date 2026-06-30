@@ -5,8 +5,10 @@ import {
   MapPin, Phone, Mail, Clock, Compass, Search, 
   Map as MapIcon, List, Eye, Navigation, PhoneCall, RefreshCw
 } from "lucide-react";
+import { subscribeToAshrams } from "../lib/db";
 
 export default function AshramMap({ initialAshrams = [] }) {
+  const [ashrams, setAshrams] = useState(initialAshrams);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("All");
   const [viewMode, setViewMode] = useState("split"); // 'split' | 'list' | 'map'
@@ -16,10 +18,17 @@ export default function AshramMap({ initialAshrams = [] }) {
   const leafletMapInstance = useRef(null);
   const markersRef = useRef([]);
 
+  useEffect(() => {
+    const unsubscribe = subscribeToAshrams((data) => {
+      setAshrams(data);
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
+
   const centerTypes = ["All", "Temple", "Ashram", "Satsang Center"];
 
   // Filter ashrams
-  const filteredAshrams = initialAshrams.filter(ash => {
+  const filteredAshrams = ashrams.filter(ash => {
     const matchesSearch = 
       ash.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ash.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -5,6 +5,8 @@ import PageHero from "../../components/PageHero";
 import EventsListing from "../../components/EventsListing";
 import { getEvents } from "../../lib/db";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Satsang Events Schedule | Neelmani Kripalu Satsang",
   description: "View upcoming satsang schedules, devotional kirtan sessions, youth morality classes, and online sadhana retreats. Secure your in-person registration."

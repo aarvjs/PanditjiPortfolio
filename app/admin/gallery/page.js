@@ -15,6 +15,7 @@ export default function AdminGalleryPage() {
   const [editingId, setEditingId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState({ message: "", type: "success" });
+  const [feedback, setFeedback] = useState({ type: "", message: "" });
   
   const [filterType, setFilterType] = useState("all"); // 'all' | 'image' | 'video'
   const [form, setForm] = useState({
@@ -32,25 +33,23 @@ export default function AdminGalleryPage() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    fetchGallery();
-  }, []);
-
-  const fetchGallery = async () => {
     setIsLoading(true);
-    try {
-      const data = await db.getGalleryItems();
-      // Sort by order asc
+    const unsubscribe = db.subscribeToGalleryItems((data) => {
       setItems(data.sort((a, b) => (a.order || 0) - (b.order || 0)));
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to fetch gallery items.", "error");
-    } finally {
       setIsLoading(false);
-    }
-  };
+    });
+    return () => unsubscribe && unsubscribe();
+  }, []);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
+    setFeedback({ type, message });
+  };
+
+  const showFeedback = (type, message) => {
+    setFeedback({ type, message });
+    setToast({ message, type });
+    setTimeout(() => setFeedback({ type: "", message: "" }), 5000);
   };
 
   const handleInputChange = (e) => {
@@ -151,9 +150,8 @@ export default function AdminGalleryPage() {
       }
 
       resetForm();
-      await fetchGallery();
     } catch (err) {
-      console.error(err);
+      console.error("Error saving gallery item:", err);
       showToast(err.message || "Failed to save item.", "error");
     } finally {
       setIsLoading(false);
@@ -164,6 +162,7 @@ export default function AdminGalleryPage() {
   const handleDeleteClick = async (item) => {
     if (!confirm(`Are you sure you want to delete this gallery item "${item.title}"?`)) return;
     setIsLoading(true);
+    showToast("Deleting item...", "info");
     try {
       // 1. Delete image file from Storage if applicable
       if (item.type === "image" && item.imageStoragePath) {
@@ -172,10 +171,10 @@ export default function AdminGalleryPage() {
       // 2. Delete document from Firestore
       await db.deleteGalleryItem(item.id);
       showToast("Gallery item deleted successfully!", "success");
-      await fetchGallery();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting gallery item:", err);
       showToast("Failed to delete item.", "error");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -548,7 +547,7 @@ export default function AdminGalleryPage() {
                 disabled={isLoading}
                 className="px-6 py-2.5 bg-saffron hover:bg-maroon text-white font-bold text-xs uppercase tracking-wider rounded-full transition-all duration-300 shadow-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {uploading ? "Saving Content..." : view === "edit" ? "Update Item" : "Add to Gallery"}
+                {isLoading ? (view === "edit" ? "Updating Item..." : "Adding to Gallery...") : (uploading ? "Saving Content..." : view === "edit" ? "Update Item" : "Add to Gallery")}
               </button>
             </div>
           </form>
